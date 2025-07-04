@@ -11,4 +11,8 @@ export class HomePage {
 
   }
 
+  goToSeatCharts(){
+    this.navCtrl.push('SeatsPage');
+  }
+
 }

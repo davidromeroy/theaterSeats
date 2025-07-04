@@ -1,0 +1,52 @@
+@import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
+
+page-seats {
+  // body {
+  //       display: flex;
+  //       justify-content: center;
+  // }
+
+  .plateaA {
+    background-color: #f9c74f;
+    color: black;
+    border-radius: 4px;
+  }
+
+  .plateaB {
+    background-color: #43aa8b;
+    color: white;
+    border-radius: 4px;
+  }
+
+  .plateaC {
+    background-color: #f94144;
+    color: white;
+    font-weight: bold;
+    // border-radius: 50%;
+  }
+
+  #seatContainer {
+    // margin: 20px auto;
+    width: 100%;
+    max-width: 500px;
+    overflow: auto;
+  }
+
+  .sc-main-container {
+    display: flex;
+    align-items: flex-start; // opcional: alinea arriba los dos contenedores
+    overflow: auto;
+    max-width: 60%;
+    max-height: 100vh;
+  }
+
+  .sc-map {
+    transform: scale(0.6); /* Ajusta entre 0.5 - 1 según tu pantalla */
+    transform-origin: top left;
+    font-size:x-large;
+
+    .sc-map-inner-container {
+    font-size: small;
+    }
+  }
+}
