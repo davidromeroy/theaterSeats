@@ -61,6 +61,10 @@ page-seats {
     justify-content: center;
     align-items: center;
   }
+  .sc-seat.sc-seat-disabled {
+      min-width: 17px !important;      
+      width: 17px !important;
+    }
 
   /* Plateas */
   .plateaA {
