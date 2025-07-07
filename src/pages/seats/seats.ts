@@ -69,7 +69,7 @@ export class SeatsPage {
           cssClass: 'plateaA',
           // seats: [{ row: 7, col: 20 }],      //Example
           seatRows: [15, 16, 17, 18, 19, 20],
-          // seatColumns: [2],
+          // seatColumns: [10],
           //TODO: La Fila I no existe
         },
         plateaC: {
