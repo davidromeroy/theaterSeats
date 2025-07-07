@@ -1,11 +1,28 @@
 @import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
 
 page-seats {
-  // body {
-  //       display: flex;
-  //       justify-content: center;
-  // }
 
+  #seatWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100vw;
+    height: auto;
+    overflow: hidden; /* ocultamos overflow general */
+    justify-content: center;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+
+  #seatContainer {
+    overflow-x: auto; /* Solo scroll horizontal para el mapa */
+    width: 100%;
+    max-width: 100vw;
+    touch-action: pan-x;
+  }
+
+  /* Plateas */
   .plateaA {
     background-color: #f9c74f;
     color: black;
@@ -25,28 +42,56 @@ page-seats {
     // border-radius: 50%;
   }
 
-  #seatContainer {
-    // margin: 20px auto;
+  // .sc-map {
+  //   // transform: scale(0.7); /* Ajusta entre 0.5 - 1 según tu pantalla */
+  //   transform-origin: top center;
+  //   font-size:x-large;
+  //   .sc-map-inner-container {
+  //   font-size: small;
+  //   }
+  // }
+
+  /* Carrito flotante al fondo */
+  #floatingCart {
+    // position: sticky;
+    bottom: 0;
     width: 100%;
-    max-width: 500px;
-    overflow: auto;
+    background: white;
+    border-top: 1px solid #ddd;
+    padding: 0.75rem;
+    // z-index: 10;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
 
-  .sc-main-container {
+  .sc-right-container {
+    // display: none !important; // Ocultamos la que genera por defecto el plugin
+    margin: 20px;
     display: flex;
-    align-items: flex-start; // opcional: alinea arriba los dos contenedores
-    overflow: auto;
-    max-width: 60%;
-    max-height: 100vh;
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem; /* 👈 Espacio horizontal entre los elementos */
+    flex-wrap: nowrap; /* Por si no caben en pantallas pequeñas */
+    font-size: small;
   }
 
-  .sc-map {
-    transform: scale(0.6); /* Ajusta entre 0.5 - 1 según tu pantalla */
-    transform-origin: top left;
-    font-size:x-large;
+  @media screen and (max-width: 768px) {
+    .sc-map {
+      transform: scale(0.6);
+    }
+    // .sc-main-container {
+    //   transform: scale(0.6);
+    // }
+  }
 
-    .sc-map-inner-container {
-    font-size: small;
+  @media screen and (min-width: 769px) and (max-width: 1200px) {
+    .sc-map {
+      transform: scale(0.8);
+    }
+  }
+
+  @media screen and (min-width: 1201px) {
+    .sc-map {
+      transform: scale(1);
     }
   }
 }

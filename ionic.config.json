@@ -1,5 +1,7 @@
 {
   "name": "theaterSeats",
-  "integrations": {},
+  "integrations": {
+    "cordova": {}
+  },
   "type": "ionic-angular"
 }

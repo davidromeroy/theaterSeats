@@ -74,18 +74,18 @@ export class SeatsPage {
         },
         plateaC: {
           label: 'Platea C',
-          price: 30,
+          price: 20,
           cssClass: 'plateaC',
           seatRows: [0, 1, 2, 3, 4, 5],
         }
       },
       selectedSeats: [
-        { row: 0, col: 5 }, 
-        { row: 0, col: 6 }
+        { row: 0, col: 6 }, 
+        { row: 0, col: 7 }
       ],  
       reservedSeats: [
-        { row: 0, col: 3 },
-        { row: 0, col: 4 },
+        { row: 0, col: 9 },
+        { row: 0, col: 10 },
       ],
       disabledSeats: this.generateDisabledSeats(),
       // disabledSeats: [
@@ -131,6 +131,16 @@ export class SeatsPage {
 
     const sc = new Seatchart(element, this.options);
 
+
+    // Esperamos a que se renderice todo antes de mover el carrito
+    setTimeout(() => {
+      const originalCart = element.querySelector('.sc-right-container');
+      const customCartContainer = document.getElementById('floatingCart');
+      if (originalCart && customCartContainer) {
+        customCartContainer.appendChild(originalCart);
+      }
+    }, 500);
+
     const total = sc.getCartTotal();
     const cart = sc.getCart();    //Obtiene la info del carrito
     // const seat = sc.getSeat({0,5});    //Obtiene la info del carrito
@@ -139,7 +149,7 @@ export class SeatsPage {
     console.log('Asientos seleccionados:', cart);
     console.log(sc.store.getOptions())
     // console.log('Seat:', seat);
-    sc.store.getOptions(); // Devuelve las opciones de configuración
+
     sc.store.seats; // Accede directamente a la grilla de asientos
     sc.store.cart; // Acceso directo al array del carrito
 
@@ -151,11 +161,6 @@ export class SeatsPage {
     sc.addEventListener('submit', function handleSubmit(e) {
         alert('Total: ' + e.total + '$');
     });
-
-    sc.addEventListener('seatchange', ({ current, previous }) => {
-      console.log('Cambio en asiento:', previous.label, '→', current.label);
-    });
-
 
   } 
 }
