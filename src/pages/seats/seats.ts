@@ -25,8 +25,8 @@ const layout = [
   { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },       //U
   { active: [8, 35, 8], disabled: [4, 4], shiftLeft: 2 },       //T
   { active: [8, 34, 8], disabled: [4, 4], shiftLeft: 3 },       //S
-  { active: [8, 33, 9], disabled: [4, 4], shiftLeft: 4 },       //R
-  { active: [8, 32, 9], disabled: [4, 4], shiftLeft: 5 },       //Q
+  { active: [8, 33, 8], disabled: [4, 4], shiftLeft: 4 },       //R
+  { active: [8, 32, 8], disabled: [4, 4], shiftLeft: 5 },       //Q
   { active: [9, 31, 9], disabled: [4, 4], shiftLeft: 4 },       //P
   { active: [9, 30, 9], disabled: [4, 4], shiftLeft: 5 },       //O
   { active: [9, 29, 9], disabled: [4, 4], shiftLeft: 6 },       //N
@@ -83,11 +83,11 @@ export class SeatsPage {
       }
     });
 
+    console.log(disabled);
     return disabled;
   }
 
   seatLabelSeatsFromLayout(index: any){
-    console.log(index);
     const rowLetter = seatLetters[seatLetters.length - 1 - index.row];
     const layoutRow = layout[index.row];
     if (!layoutRow) return '';
@@ -123,6 +123,47 @@ export class SeatsPage {
     return '';
   }
 
+  generateCentralBlockSeats(seatRows) {
+    const seats = [];
+    seatRows.forEach(row => {
+      const rowLayout = layout[row];
+      const shift = rowLayout.shiftLeft;
+      const left = rowLayout.active[0];
+      const pasillo = rowLayout.disabled[0];
+      const center = rowLayout.active[1];
+
+      for (let i = 0; i < center; i++) {
+        const col = shift + left + pasillo + i;
+        seats.push({ row, col });
+      }
+    });
+
+    return seats;
+  }
+
+  generateSideSeats(seatRows, count) {
+    const seats = [];
+    seatRows.forEach(row => {
+      const rowLayout = layout[row];
+      const shift = rowLayout.shiftLeft;
+      const [leftCount, centerCount, rightCount] = rowLayout.active;
+
+      // Primeros `count` asientos del lado izquierdo
+      for (let i = 0; i < Math.min(count, leftCount); i++) {
+        const col = shift + i;
+        seats.push({ row, col });
+      }
+
+      // Últimos `count` asientos del lado derecho
+      for (let i = 0; i < Math.min(count, rightCount); i++) {
+        const col = shift + leftCount + 8 + centerCount + (rightCount - count) + i;   //+8 por los 2 pasillos
+        seats.push({ row, col });
+      }
+    });
+
+    return seats;
+  }
+
   options = {
     /**
      * Map options.
@@ -140,26 +181,32 @@ export class SeatsPage {
           label: 'Platea A',
           price: 40,
           cssClass: 'plateaA',
-          // seats: [{ row: 7, col: 20 }],      //Example
-          seatRows: [14, 15, 16, 17, 18, 19],
+          seats: this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
           // seatColumns: [10],
-          //TODO: La Fila I no existe
+          // // seatRows: [0, 1, 2, 3, 4, 5],
+          // seats: [{ row: 7, col: 20 }],      //Example
         },
         plateaC: {
           label: 'Platea C',
           price: 20,
           cssClass: 'plateaC',
           seatRows: [0, 1, 2, 3, 4, 5],
+          seats: [
+            // ...this.generateCentralBlockSeats(),
+            ...this.generateSideSeats([6], 8),
+            ...this.generateSideSeats([14], 5),
+            ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
+          ]
         }
       },
       selectedSeats: [
         { row: 0, col: 44 }, 
         { row: 3, col: 34 } //W= row:0, A= row:22
-      ],  
+      ],   //EXAMPLE
       reservedSeats: [
         { row: 12, col: 30 },
         { row: 5, col: 10 },
-      ],
+      ],   // EXAMPLE
       disabledSeats: this.generateDisabledSeatsFromLayout(),
       // columnSpacers: [0],
       // rowSpacers: [0],   // Posicion donde se pondrá un espacio entre filas. Index 4 forma un espacio entre la columna 4 y 5.
@@ -193,6 +240,22 @@ export class SeatsPage {
     // const Seatchart = (window as any).Seatchart;
     const sc = new Seatchart(element, this.options);
     // Esperamos a que se renderice todo antes de mover el carrito
+    const legend = document.querySelector('.sc-legend');
+    if (legend) {
+      const li = document.createElement('li');
+      li.classList.add('sc-legend-item', 'custom-selected');
+      li.innerHTML = `
+        <div class="sc-legend-bullet sc-seat sc-seat-selected"></div>
+        <p class="sc-legend-description">Seleccionado</p>
+      `;
+      legend.appendChild(li); // O prependChild(li) si lo quieres al inicio
+      legend.appendChild(document.querySelector('.sc-cart-footer'));
+    } 
+
+    const cart2 = document.querySelector('.sc-cart');
+    if (cart2) {
+      cart2.remove();
+    }
     
     setTimeout(() => {
       const originalCart = element.querySelector('.sc-right-container');
@@ -200,7 +263,7 @@ export class SeatsPage {
       if (originalCart && customCartContainer) {
         customCartContainer.appendChild(originalCart);
       }
-    }, 500);
+    }, 200);
 
     const total = sc.getCartTotal();
     const cart = sc.getCart();    //Obtiene la info del carrito

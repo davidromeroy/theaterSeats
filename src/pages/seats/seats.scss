@@ -7,21 +7,25 @@ page-seats {
     flex-direction: column;
     width: 100%;
     max-width: 100vw;
+    // height: auto;
+    max-height: 100vh;
     justify-content: center;
     padding: 0 1rem;
     box-sizing: border-box;
   }
 
-  #seatContainer {
-    width: 100%;
-    max-width: 100vw;
-    overflow: visible;
-  }
+  // #seatContainer {
+  //   box-sizing: border-box;
+  //   padding-bottom: 0.5rem;
+  // }
 
   .sc-main-container {
+    overflow-y: auto;
     display: flex;
     flex-direction: row;
     width: 100%;
+    height: 50vh;
+    padding: 0%;
   }
 
    // 🔳 Indexador (fila)
@@ -37,53 +41,72 @@ page-seats {
   .sc-map {
     display: flex;
     flex-direction: row;
-    width: 100%;
+    // height: auto;
   }
-  
-  .sc-seats-container {
-    overflow-y: hidden;
-    white-space: wrap;
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    font-size: small;
+
+  .sc-indexer .sc-seat-indexer {
+    height: 32px !important;          // ⬅️ Misma altura que .sc-seat
+    font-size: 1.1rem !important;
+    font-weight: bold;
   }
 
   /* Seats style */
   .sc-seat {
     flex: 0 0 auto !important; // evita que se escalen
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
+    width: 36px;
+    height: 32px;
+    min-width: 20px;
+    min-height: 20px;
+    font-size: 1.1rem !important;
+    border-radius: 8px 8px 0 0;
+    // line-height: 40px;
     box-sizing: border-box;
     text-align: center;
     justify-content: center;
     align-items: center;
   }
   .sc-seat.sc-seat-disabled {
-      min-width: 17px !important;      
-      width: 17px !important;
-    }
+      min-width: 14px !important;      
+      width: 14px !important;
+  }
+
+  .sc-legend-bullet{
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0px;
+    border-radius: 5px 5px 0 0 !important;
+  }
+
+  .sc-seat.sc-seat-selected {
+    cursor: pointer;
+    background-color: #95013d;
+    color: white; 
+    opacity: 1;
+  }
+
+  .sc-seat.sc-seat-reserved,
+  .sc-seat-reserved {
+    color: white;
+    background-color: #6e6e6e;
+    // cursor: not-allowed;
+  }
 
   /* Plateas */
   .plateaA {
-    background-color: #f9c74f;
-    color: black;
-    border-radius: 4px;
+    background-color: rgb(255, 255, 0); //#f9c74f
+    color: black; 
   }
 
   .plateaB {
-    background-color: #43aa8b;
-    color: white;
-    border-radius: 4px;
+    background-color: rgb(67, 227, 211); //#43aa8b
+    color: black;
+    // border-radius: 4px;
   }
 
   .plateaC {
-    background-color: #f94144;
-    color: white;
-    font-weight: bold;
-    // border-radius: 50%;
+    background-color: rgb(255, 0, 255); //#f94144
+    color: black;;
+    // border-radius: 4px;
   }
 
   /* Carrito flotante al fondo */
@@ -107,6 +130,10 @@ page-seats {
     gap: 1.5rem;             // Espacio entre carrito y leyenda
     flex-wrap: nowrap;         // Para que se adapte en móviles
     font-size: small;
+  }
+
+  .sc-cart-table-container{
+    height: 20vh;
   }
 
   @media screen and (max-width: 768px) {
