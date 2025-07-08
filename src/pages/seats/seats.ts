@@ -220,8 +220,8 @@ export class SeatsPage {
         label: (column: number) => {
           return `${seatLetters[seatLetters.length - column - 1]}`
         },  //True por default, indices del 1 al 50 en este caso (this.columns)
-      }
-      // frontVisible: false, //True por default
+      },
+      frontVisible: false, //True por default
     },
     
     /**
@@ -232,7 +232,7 @@ export class SeatsPage {
       currency: '$',
       submitLabel: 'Reservar',  // Checkout por default
     },
-    // legendVisible: false,    // True por default
+    legendVisible: false,    // True por default
   };
 
   ionViewDidEnter() {
@@ -249,21 +249,27 @@ export class SeatsPage {
         <p class="sc-legend-description">Seleccionado</p>
       `;
       legend.appendChild(li); // O prependChild(li) si lo quieres al inicio
-      legend.appendChild(document.querySelector('.sc-cart-footer'));
     } 
 
-    const cart2 = document.querySelector('.sc-cart');
-    if (cart2) {
-      cart2.remove();
-    }
+  
     
     setTimeout(() => {
       const originalCart = element.querySelector('.sc-right-container');
       const customCartContainer = document.getElementById('floatingCart');
       if (originalCart && customCartContainer) {
-        customCartContainer.appendChild(originalCart);
+        customCartContainer.appendChild(originalCart); 
+        // customCartContainer.appendChild(document.querySelector('.sc-cart-title'));
+        customCartContainer.appendChild(document.querySelector('.sc-cart-header'));
+        customCartContainer.appendChild(document.querySelector('.sc-cart-footer'));
+      }
+      const cart2 = customCartContainer.querySelector('.sc-right-container');
+      if (cart2) {
+        cart2.remove();
       }
     }, 200);
+    
+    
+
 
     const total = sc.getCartTotal();
     const cart = sc.getCart();    //Obtiene la info del carrito
