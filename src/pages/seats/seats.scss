@@ -1,7 +1,106 @@
 @import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
 
 page-seats {
+  
+  // 🎨 LEYENDA PRINCIPAL (Plateas)
+  .legend-card {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    margin-bottom: 1rem;
 
+    .legend-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .legend-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+
+      .legend-bullet {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      .legend-description {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  // 📌 LEYENDA INFERIOR (Selección)
+  .legend-footer {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 1rem;
+
+    .legend-list {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+      padding: 0;
+      margin: 0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .legend-bullet {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+
+      .legend-description {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  // 🛒 BOTÓN DEL CARRITO
+  .sc-cart-btn-submit, .sc-cart-btn-delete  {
+    background-color: #95013d;
+  }
+
+  // 🎭 ESCENARIO DEL TEATRO
+  .stage {
+    width: auto;
+    text-align: center;
+    background-color: #222;
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    border-radius: 6px;
+    font-size: 1.8rem;
+    margin-left: 10%;
+    margin-right: 10%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  // 🎫 CONTENEDOR PRINCIPAL
   #seatWrapper {
     display: flex;
     flex-direction: column;
@@ -14,35 +113,30 @@ page-seats {
     box-sizing: border-box;
   }
 
-  // #seatContainer {
-  //   box-sizing: border-box;
-  //   padding-bottom: 0.5rem;
-  // }
-
+  // 🧱 CONTENEDOR DEL MAPA
   .sc-main-container {
     overflow-y: auto;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     width: 100%;
     height: 50vh;
     padding: 0%;
   }
+  
+  .sc-map {
+    display: flex;
+    flex-direction: row;
+    // height: auto;
+  }
 
-   // 🔳 Indexador (fila)
+  // 🔳 Indexador (fila)
   .sc-indexer {
     flex-shrink: 0;           // Evita que se achique
   }
   // 🔳 Mapa de asientos
   .sc-map-inner-container {
     flex-shrink: 0;
-  }
-
-  // 🎫 Estilo del mapa en general
-  .sc-map {
-    display: flex;
-    flex-direction: row;
-    // height: auto;
-  }
+  }  
 
   .sc-indexer .sc-seat-indexer {
     height: 32px !important;          // ⬅️ Misma altura que .sc-seat
@@ -50,7 +144,7 @@ page-seats {
     font-weight: bold;
   }
 
-  /* Seats style */
+  // 🎟️ ESTILOS DE ASIENTOS
   .sc-seat {
     flex: 0 0 auto !important; // evita que se escalen
     width: 36px;
@@ -70,13 +164,6 @@ page-seats {
       width: 14px !important;
   }
 
-  .sc-legend-bullet{
-    width: 22px !important;
-    height: 22px !important;
-    margin: 0px;
-    border-radius: 5px 5px 0 0 !important;
-  }
-
   .sc-seat.sc-seat-selected {
     cursor: pointer;
     background-color: #95013d;
@@ -87,11 +174,11 @@ page-seats {
   .sc-seat.sc-seat-reserved,
   .sc-seat-reserved {
     color: white;
-    background-color: #6e6e6e;
+    background-color: #a2a2a2;
     // cursor: not-allowed;
   }
 
-  /* Plateas */
+  // 🎫 PLATEAS (A, B, C)
   .plateaA {
     background-color: rgb(255, 255, 0); //#f9c74f
     color: black; 
@@ -109,33 +196,18 @@ page-seats {
     // border-radius: 4px;
   }
 
-  /* Carrito flotante al fondo */
+  // 🛒 CARRITO FLOTANTE
   #floatingCart {
     // position: sticky;
     width: 100%;
     background: white;
-    border-top: 1px solid #ddd;
-    padding: 0.75rem 1rem;
+    // border-top: 1px solid #ddd;
+    padding: 1rem 1rem;
     // z-index: 10;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    // box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
 
-  .sc-right-container {
-    // display: none !important; // Ocultamos la que genera por defecto el plugin
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    margin: 20px;
-    gap: 1.5rem;             // Espacio entre carrito y leyenda
-    flex-wrap: nowrap;         // Para que se adapte en móviles
-    font-size: small;
-  }
-
-  .sc-cart-table-container{
-    height: 20vh;
-  }
-
+  // 📱 MEDIAS RESPONSIVAS
   @media screen and (max-width: 768px) {
     .sc-map {
       // transform: scale(0.6);
