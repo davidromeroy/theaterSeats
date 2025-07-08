@@ -240,17 +240,11 @@ export class SeatsPage {
     // const Seatchart = (window as any).Seatchart;
     const sc = new Seatchart(element, this.options);
     // Esperamos a que se renderice todo antes de mover el carrito
-    const legend = document.querySelector('.sc-legend');
-    if (legend) {
-      const li = document.createElement('li');
-      li.classList.add('sc-legend-item', 'custom-selected');
-      li.innerHTML = `
-        <div class="sc-legend-bullet sc-seat sc-seat-selected"></div>
-        <p class="sc-legend-description">Seleccionado</p>
-      `;
-      legend.appendChild(li); // O prependChild(li) si lo quieres al inicio
-    } 
-
+    const mapContainer = element.querySelector('.sc-map').querySelector('.sc-map-inner-container');
+    const stageDiv = document.createElement('div');
+    stageDiv.className = 'stage';
+    stageDiv.textContent = 'Escenario';
+    mapContainer.appendChild(stageDiv);
   
     
     setTimeout(() => {

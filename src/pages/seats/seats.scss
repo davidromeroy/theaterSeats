@@ -1,7 +1,8 @@
 @import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
 
 page-seats {
-
+  
+  // 🎨 LEYENDA PRINCIPAL (Plateas)
   .legend-card {
     background: #ffffff;
     border: 1px solid #ddd;
@@ -45,6 +46,7 @@ page-seats {
     }
   }
 
+  // 📌 LEYENDA INFERIOR (Selección)
   .legend-footer {
     display: flex;
     justify-content: center;
@@ -77,11 +79,28 @@ page-seats {
     }
   }
 
+  // 🛒 BOTÓN DEL CARRITO
   .sc-cart-btn-submit, .sc-cart-btn-delete  {
     background-color: #95013d;
   }
 
+  // 🎭 ESCENARIO DEL TEATRO
+  .stage {
+    width: auto;
+    text-align: center;
+    background-color: #222;
+    color: white;
+    font-weight: bold;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    border-radius: 6px;
+    font-size: 1.8rem;
+    margin-left: 10%;
+    margin-right: 10%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
 
+  // 🎫 CONTENEDOR PRINCIPAL
   #seatWrapper {
     display: flex;
     flex-direction: column;
@@ -94,30 +113,30 @@ page-seats {
     box-sizing: border-box;
   }
 
+  // 🧱 CONTENEDOR DEL MAPA
   .sc-main-container {
     overflow-y: auto;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     width: 100%;
     height: 50vh;
     padding: 0%;
   }
+  
+  .sc-map {
+    display: flex;
+    flex-direction: row;
+    // height: auto;
+  }
 
-   // 🔳 Indexador (fila)
+  // 🔳 Indexador (fila)
   .sc-indexer {
     flex-shrink: 0;           // Evita que se achique
   }
   // 🔳 Mapa de asientos
   .sc-map-inner-container {
     flex-shrink: 0;
-  }
-
-  // 🎫 Estilo del mapa en general
-  .sc-map {
-    display: flex;
-    flex-direction: row;
-    // height: auto;
-  }
+  }  
 
   .sc-indexer .sc-seat-indexer {
     height: 32px !important;          // ⬅️ Misma altura que .sc-seat
@@ -125,7 +144,7 @@ page-seats {
     font-weight: bold;
   }
 
-  /* Seats style */
+  // 🎟️ ESTILOS DE ASIENTOS
   .sc-seat {
     flex: 0 0 auto !important; // evita que se escalen
     width: 36px;
@@ -145,7 +164,6 @@ page-seats {
       width: 14px !important;
   }
 
-
   .sc-seat.sc-seat-selected {
     cursor: pointer;
     background-color: #95013d;
@@ -156,11 +174,11 @@ page-seats {
   .sc-seat.sc-seat-reserved,
   .sc-seat-reserved {
     color: white;
-    background-color: #6e6e6e;
+    background-color: #a2a2a2;
     // cursor: not-allowed;
   }
 
-  /* Plateas */
+  // 🎫 PLATEAS (A, B, C)
   .plateaA {
     background-color: rgb(255, 255, 0); //#f9c74f
     color: black; 
@@ -178,7 +196,7 @@ page-seats {
     // border-radius: 4px;
   }
 
-  /* Carrito flotante al fondo */
+  // 🛒 CARRITO FLOTANTE
   #floatingCart {
     // position: sticky;
     width: 100%;
@@ -189,7 +207,7 @@ page-seats {
     // box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
 
-
+  // 📱 MEDIAS RESPONSIVAS
   @media screen and (max-width: 768px) {
     .sc-map {
       // transform: scale(0.6);
