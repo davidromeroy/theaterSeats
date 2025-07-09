@@ -196,6 +196,16 @@ page-seats {
     color: black;;
     // border-radius: 4px;
   }
+  
+  .index {
+    pointer-events: none;            // ❌ No se puede hacer clic
+    cursor: default;                // 👉 Cursor normal 
+    background-color: transparent;
+    color: #95013d;
+    font-size: 1.5rem !important;
+    font-weight:bold;
+    opacity: 1 !important; 
+  }
 
   // 🛒 CARRITO FLOTANTE
   #floatingCart {

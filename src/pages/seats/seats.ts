@@ -1,6 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { map } from 'rxjs/operator/map';
+// import { map } from 'rxjs/operator/map';
 
 // import * as Seatchart from 'seatchart'; // <-- Importa la librería
 declare var require: any; // 👈 ayuda a TypeScript a compilar el require
@@ -20,9 +20,9 @@ const seatLetters = [
 ]; // 22 filas
 
 const rows = seatLetters.length; // 22
-const columns = 62; // o 60, dependiendo del espacio que quieras
+const columns = 64; // o 60, dependiendo del espacio que quieras
 const layout = [
-  { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 16 },      //W
+  { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 17 },      //W
   { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },       //V
   { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },       //U
   { active: [8, 35, 8], disabled: [4, 4], shiftLeft: 2 },       //T
@@ -55,6 +55,7 @@ export class SeatsPage {
   private sc: any;
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
+  dineroDisponible = 30;
 
   constructor(public navCtrl: NavController, public navParams: NavParams) {
   }
@@ -66,16 +67,19 @@ export class SeatsPage {
       let col = 0;
 
       // Desactivamos los asientos iniciales definidos por shiftLeft
-      for (let i = 0; i < rowLayout.shiftLeft; i++) {
+      for (let i = 0; i < rowLayout.shiftLeft-1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
 
+      if (rowLayout.active[0]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft -1});
+      if (rowLayout.active[2]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 + -1});
+
       // Alternamos bloques de activos y deshabilitados
       rowLayout.active.forEach((activeSeats, i) => {
-        col += activeSeats;
+        col += activeSeats+1;
 
         const gap = rowLayout.disabled[i] || 0;
-        for (let j = 0; j < gap; j++) {
+        for (let j = 0; j < gap-1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
         }
       });
@@ -120,9 +124,11 @@ export class SeatsPage {
       const offset = col - rightStart;
       const labelNumber = 2 * offset + 1; // impares ascendentes
       return `${rowLetter}${labelNumber}`;
+    } else{
+      return rowLetter
     }
 
-    return '';
+    // return '';
   }
 
   generateCentralBlockSeats(seatRows) {
@@ -166,6 +172,26 @@ export class SeatsPage {
     return seats;
   }
 
+  generateIndexSeats() {
+    const indexSeats = [];
+
+    layout.forEach((rowLayout, rowIndex) => {
+      const shift = rowLayout.shiftLeft;
+      const [leftCount, centerCount, rightCount] = rowLayout.active;
+      
+      const colIndex = shift - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex });
+
+      const colIndex2 = shift + leftCount + 4 - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex2 });
+
+      const colIndex3 = shift + leftCount + 4 + centerCount + 4 - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex3 });
+    });
+
+    return indexSeats;
+}
+
   options = {
     /**
      * Map options.
@@ -184,21 +210,24 @@ export class SeatsPage {
           price: 40,
           cssClass: 'plateaA',
           seats: this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
-          // seatColumns: [10],
-          // // seatRows: [0, 1, 2, 3, 4, 5],
-          // seats: [{ row: 7, col: 20 }],      //Example
         },
         plateaC: {
           label: 'Platea C',
           price: 20,
           cssClass: 'plateaC',
-          seatRows: [0, 1, 2, 3, 4, 5],
+          // seatRows: [0, 1, 2, 3, 4, 5],
           seats: [
-            // ...this.generateCentralBlockSeats(),
-            ...this.generateSideSeats([6], 8),
+            ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
+            ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
             ...this.generateSideSeats([14], 5),
             ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
           ]
+        },
+        index: {
+          label: 'Index',
+          price: 0,
+          cssClass: 'index',
+          seats: this.generateIndexSeats(),
         }
       },
       // selectedSeats: [
@@ -219,6 +248,7 @@ export class SeatsPage {
         visible: false,  //True por default, indices del 1 al 50 en este caso (this.columns)
       },
       indexerRows: {
+        visible: false,
         label: (column: number) => {
           return `${seatLetters[seatLetters.length - column - 1]}`
         },  //True por default, indices del 1 al 50 en este caso (this.columns)
@@ -364,10 +394,66 @@ export class SeatsPage {
     this.setupSubmitHandler(this.sc);
   }
 
+  allowedPlatea (){
+    // Base de asientos deshabilitados según layout (pasillos, espacios)
+    const baseDisabledSeats = this.generateDisabledSeatsFromLayout();
+    // Definición de asientos por platea
+    const plateaSeats = {
+      'Platea A': this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
+      'Platea C': [
+        ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
+        ...this.generateSideSeats([14], 5),
+        ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
+        ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])
+      ],
+      'Platea B': []
+    };
+
+      // Completar Platea B con asientos que no están en A ni en C ni están deshabilitados
+    for (let row = 0; row < this.options.map.rows; row++) {
+      for (let col = 0; col < this.options.map.columns; col++) {
+        const index = { row, col };
+
+        // Si está deshabilitado por layout, ignoramos
+        let isDisabledByLayout = baseDisabledSeats.some(d => d.row === row && d.col === col);
+        if (isDisabledByLayout) continue;
+
+        // Si no está en A ni C, pertenece a B
+        const inA = plateaSeats['Platea A'].some(s => s.row === row && s.col === col);
+        const inC = plateaSeats['Platea C'].some(s => s.row === row && s.col === col);
+
+        if (!inA && !inC) {
+          plateaSeats['Platea B'].push(index);
+        }
+      }
+    }
+
+    // Asignar plateas permitidas según dinero disponible
+    const allowedPlatea = [];
+    if (this.dineroDisponible >= 20) allowedPlatea.push('Platea C');
+    if (this.dineroDisponible >= 30) allowedPlatea.push('Platea B');
+    if (this.dineroDisponible >= 40) allowedPlatea.push('Platea A');
+
+    // Construir lista final de asientos deshabilitados (layout) y reservados (por presupuesto)
+    const finalDisabledSeats = baseDisabledSeats.slice();  // layout deshabilitados
+    const reservedSeats = [];
+
+    for (const platea in plateaSeats) {
+      if (allowedPlatea.indexOf(platea) === -1) {
+        // Asientos bloqueados por falta de presupuesto van a reservedSeats para que se vean bloqueados, no desaparezcan
+        reservedSeats.push(...plateaSeats[platea]);
+      }
+    }
+
+    // Actualizar la configuración de opciones
+    this.options.map.disabledSeats = finalDisabledSeats;
+    this.options.map.reservedSeats = reservedSeats;
+  }
+
   ionViewDidEnter() {
     const container = this.seatContainer.nativeElement;
     this.initSeatChart(container);
-    // this.scrollToBottomCenter(container);
+    this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
 
     // Estado inicial
     //   const cart = sc.getCart().length;    //Obtiene la info del carrito
