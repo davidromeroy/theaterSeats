@@ -1,0 +1,15 @@
+page-qr {
+    .qr-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .qr-wrapper img {
+        max-width: 200px;
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        background-color: #fff;
+    }
+}

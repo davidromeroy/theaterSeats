@@ -12,7 +12,7 @@
 
 <!-- <ion-content padding scroll="false"> -->
 <ion-content padding scroll="true">
-
+  <!-- Leyenda de Plateas -->
   <div class="legend-card">
     <h3 class="legend-title">Plateas</h3>
     <ul class="legend-list">
@@ -28,21 +28,23 @@
         <div class="legend-bullet plateaC"></div>
         <p class="legend-description">Platea C ($20)</p>
       </li>
+        <button (click)="goToQr()">Ver entradas</button>
     </ul>
   </div>
-
+  
+  <!-- Mapa y carrito -->
   <div id="seatWrapper">
     <div #seatContainer>
     </div>
     <div class="legend-footer">
       <ul class="legend-list">
         <li class="legend-item">
-          <div class="legend-bullet sc-seat sc-seat-selected"></div>
-          <p class="legend-description">Seleccionado</p>
+          <div class="legend-bullet sc-seat-reserved"></div>
+          <p class="legend-description">Ocupado</p>
         </li>
         <li class="legend-item">
-          <div class="legend-bullet sc-seat-reserved"></div>
-          <p class="legend-description">Reservado</p>
+          <div class="legend-bullet sc-seat sc-seat-selected"></div>
+          <p class="legend-description">Su Asiento</p>
         </li>
       </ul>
     </div>

@@ -94,7 +94,7 @@ page-seats {
     padding: 0.75rem;
     margin-top: 1rem;
     border-radius: 6px;
-    font-size: 1.8rem;
+    font-size: 2.1rem;
     margin-left: 10%;
     margin-right: 10%;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -132,6 +132,7 @@ page-seats {
   // 🔳 Indexador (fila)
   .sc-indexer {
     flex-shrink: 0;           // Evita que se achique
+    margin-bottom: 50px;
   }
   // 🔳 Mapa de asientos
   .sc-map-inner-container {
