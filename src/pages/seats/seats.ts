@@ -1,5 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { AlertController } from 'ionic-angular';
 // import { map } from 'rxjs/operator/map';
 
 // import * as Seatchart from 'seatchart'; // <-- Importa la librería
@@ -57,7 +58,9 @@ export class SeatsPage {
   @ViewChild('seatContainer') seatContainer: ElementRef;
   dineroDisponible = 30;
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
+  constructor(public alertCtrl: AlertController,
+    public navCtrl: NavController, 
+    public navParams: NavParams) {
   }
 
   generateDisabledSeatsFromLayout() {
@@ -373,9 +376,10 @@ export class SeatsPage {
 
       // Navega a la página QR con todos los datos
       const qrDataArray = await Promise.all(qrDataPromises);
-      this.navCtrl.push('QrPage', { qrDataArray });
+      // this.navCtrl.push('QrPage', { qrDataArray });
 
-      alert('Total: ' + e.total + '$');
+      this.reserveConfirm(qrDataArray);
+      // alert('Total: ' + e.total + '$');
     });
   }
 
@@ -449,6 +453,32 @@ export class SeatsPage {
     // Actualizar la configuración de opciones
     this.options.map.disabledSeats = finalDisabledSeats;
     this.options.map.reservedSeats = reservedSeats;
+  }
+
+  reserveConfirm(qrDataArray) {
+    console.log(qrDataArray)
+    const alert = this.alertCtrl.create({
+      title: 'Confirmar reserva',
+      message: '¿Deseas reservar estos asientos?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+          handler: () => {
+            console.log('Envío cancelado');
+          }
+        },
+        {
+          text: 'Enviar',
+          handler: () => {
+            // Lógica de envío
+            this.navCtrl.push('QrPage', { qrDataArray });
+            console.log('Formulario enviado');
+          }
+        }
+      ]
+    });
+    alert.present();
   }
 
   ionViewDidEnter() {
