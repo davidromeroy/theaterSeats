@@ -279,46 +279,6 @@ export class SeatsPage {
     // NO recargues el mapa aquí para no perder selección.
   }
 
-  onPay() {
-    const blockedSeatsActual = JSON.parse(localStorage.getItem('blockedSeats') || '[]')
-      .filter(b => b.expires > Date.now());
-    const soldSeatsActual = JSON.parse(localStorage.getItem('soldSeats') || '[]');
-    let errorAsientos = [];
-    this.cart.forEach(seat => {
-      const sold = soldSeatsActual.some(
-        s => s.row === seat.row && s.col === seat.col
-      );
-      const blocked = blockedSeatsActual.some(
-        b => b.row === seat.row && b.col === seat.col
-      );
-      if (sold) errorAsientos.push(`Asiento ${seat.row}-${seat.col}: YA VENDIDO`);
-      else if (blocked) errorAsientos.push(`Asiento ${seat.row}-${seat.col}: YA BLOQUEADO`);
-    });
-
-    if (errorAsientos.length > 0) {
-      alert('Algunos asientos ya no están disponibles:\n' + errorAsientos.join('\n'));
-      // Limpia carrito de asientos no disponibles
-      this.cart = this.cart.filter(seat => {
-        const sold = soldSeatsActual.some(s => s.row === seat.row && s.col === seat.col);
-        const blocked = blockedSeatsActual.some(b => b.row === seat.row && b.col === seat.col);
-        return !sold && !blocked;
-      });
-      return;
-    }
-
-    // Si todos disponibles, registra la venta
-    this.cart.forEach(seat => {
-      this.blockedSeats = this.blockedSeats.filter(
-        b => !(b.row === seat.row && b.col === seat.col)
-      );
-      this.soldSeats.push({ row: seat.row, col: seat.col });
-    });
-    this.cart = [];
-    this.saveSeatsToStorage();
-    this.refreshMap();
-    alert('¡Pago realizado! Los asientos han sido vendidos.');
-  }
-
   // --- Métodos de integración Seatchart (escenario, carrito, QR) ---
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
