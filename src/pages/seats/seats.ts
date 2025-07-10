@@ -47,12 +47,22 @@ export class SeatsPage {
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
 
-  blockedSeats: { row: number, col: number, expires: number }[] = [];
+  blockedSeats: { row: number, col: number, expires: number,sesionId:string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
   blockTimes = 1 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
-
+   
+  
   constructor(public navCtrl: NavController, public navParams: NavParams) {}
+  
+  getSession(){
+  let sendId = sessionStorage.getItem('sendId');
+  if(!sendId) {
+    sendId = Math.random().toString(36).substr(2,9) + Date.now();
+    sessionStorage.setItem('sendId', sendId);
+  }
+  return sendId;
+}
 
   // --- Métodos para el layout y etiquetas ---
   generateDisabledSeatsFromLayout() {
@@ -164,7 +174,13 @@ export class SeatsPage {
           ]
         }
       },
-      reservedSeats: [],
+      reservedSeats: [
+        {
+         label: 'Reservado',
+    price: 0,
+    cssClass: 'sc-seat-reserved'
+      }
+      ],
       disabledSeats: [],
       seatLabel: (index) => {
         return this.seatLabelSeatsFromLayout(index);
@@ -205,8 +221,9 @@ export class SeatsPage {
   }
   
   isblocked(row: number, col: number): boolean {
+    const miSesion = this.getSession();   
     return this.blockedSeats.some(
-      b => row === b.row && col === b.col && b.expires > Date.now()
+       b => row === b.row && col === b.col && b.expires > Date.now() && b.sesionId !== miSesion
     );
   }
   isSold(row: number, col: number): boolean {
@@ -216,7 +233,8 @@ export class SeatsPage {
   }
 
   getDisabledSeats() {
-    const blocks = this.blockedSeats.filter(b => b.expires > Date.now());
+    const miSesion = this.getSession();
+    const blocks = this.blockedSeats.filter(b => b.expires > Date.now()&& b.sesionId !== miSesion);
     return [
       ...this.generateDisabledSeatsFromLayout(),
       ...blocks.map(b => ({ row: b.row, col: b.col })),
@@ -232,8 +250,11 @@ export class SeatsPage {
 
   // --- ESTE ES EL MÉTODO CLAVE DE SINCRONIZACIÓN ---
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
+    // simulacion de una sesion
+    const miSesion = this.getSession();
     // Mantén solo bloqueos de asientos actualmente seleccionados y vigentes
     this.blockedSeats = this.blockedSeats.filter(blocked =>
+      (blocked.sesionId === miSesion && blocked.expires > Date.now()) ||
       selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now())
     );
     // Agrega bloqueos para asientos seleccionados no bloqueados ni vendidos
@@ -248,7 +269,8 @@ export class SeatsPage {
         this.blockedSeats.push({
           row: seat.row,
           col: seat.col,
-          expires: Date.now() + this.blockTimes
+          expires: Date.now() + this.blockTimes,
+          sesionId: miSesion
         });
       }
     });
@@ -334,6 +356,7 @@ export class SeatsPage {
   }
 
   private setupCartListener(sc: any) {
+
     sc.addEventListener('cartchange', () => {
       // ¡Esta es la SELECCIÓN real del usuario!
       const cart = sc.getCart();
@@ -347,14 +370,15 @@ export class SeatsPage {
     });
     setTimeout(() => {
       const seats = document.querySelectorAll('.sc-seat');
-      seats.forEach((seatEl: HTMLElement) => {
+      Array.prototype.forEach.call(seats,(seatEl: HTMLElement) => {
         seatEl.addEventListener('click',(e:any) => {
           const dataIndex = seatEl.getAttribute('data-index');
           if(dataIndex && seatEl.classList.contains('sc-seat-disabled')) {
             const [row,col]= dataIndex.split(',').map(Number);
             if (this.isblocked(row, col)) {
               e.stopPropagation();
-              alert(`Asiento ${row}-${col} está bloqueado.`);
+                        alert(`Asiento ${row}-${col} está temporalmente reservado por otro usuario. Intenta en 2 minutos.`);
+
             }
           }
         })
