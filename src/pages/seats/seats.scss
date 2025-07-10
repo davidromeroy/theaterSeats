@@ -1,6 +1,10 @@
 @import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
 
 page-seats {
+
+  .budget-label{
+
+  }
   
   // 🎨 LEYENDA PRINCIPAL (Plateas)
   .legend-card {
@@ -55,7 +59,7 @@ page-seats {
     .legend-list {
       list-style: none;
       display: flex;
-      gap: 1rem;
+      gap: 2rem;
       padding: 0;
       margin: 0;
     }
@@ -82,6 +86,9 @@ page-seats {
   // 🛒 BOTÓN DEL CARRITO
   .sc-cart-btn-submit, .sc-cart-btn-delete  {
     background-color: #95013d;
+    &:hover, &:active{
+      background-color: #b21853;
+    }
   }
 
   // 🎭 ESCENARIO DEL TEATRO
@@ -92,7 +99,7 @@ page-seats {
     color: white;
     font-weight: bold;
     padding: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 2rem;
     border-radius: 6px;
     font-size: 2.1rem;
     margin-left: 10%;
@@ -119,7 +126,7 @@ page-seats {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 50vh;
+    height: 40vh;
     padding: 0%;
   }
   
@@ -196,7 +203,7 @@ page-seats {
     color: black;;
     // border-radius: 4px;
   }
-  
+
   .index {
     pointer-events: none;            // ❌ No se puede hacer clic
     cursor: default;                // 👉 Cursor normal 
@@ -209,13 +216,33 @@ page-seats {
 
   // 🛒 CARRITO FLOTANTE
   #floatingCart {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
     // position: sticky;
     width: 100%;
     background: white;
     // border-top: 1px solid #ddd;
     padding: 1rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 12px;
     // z-index: 10;
-    // box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    .sc-cart-header{
+      align-items: normal;
+      width: 250px;
+      height: max-content;
+      gap: 1.2rem;
+      .cart-count{ margin: 0; font-weight: bold; font-size: 1.4rem; }
+      .sc-cart-title { display: none }
+    }
+    .sc-cart-footer{
+      width: 100%;
+      height: max-content;
+    }
+    
   }
 
   // 📱 MEDIAS RESPONSIVAS

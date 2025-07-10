@@ -1,3 +1,30 @@
 page-home {
+    .button-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; // Ocupa todo el alto de la pantalla
+    }
+
+    .redeem-button {
+    background-color: #95013d;
+    color: #fff;
+    padding: 1rem 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+    &:hover {
+        background-color: #b21853;
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+    }
 
 }

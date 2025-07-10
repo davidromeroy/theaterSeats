@@ -335,23 +335,24 @@ export class SeatsPage {
 
       container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
 
-      // const countP = document.createElement('p');
-      // countP.classList.add('cart-count');
-      // countP.textContent = `Tickets: ${sc.getCart().length}`;
-      // originalHeader.appendChild(countP);
+      const countP = document.createElement('p');
+      countP.classList.add('cart-count');
+      countP.textContent = `${sc.getCart().length} tickets`;
+      originalHeader.insertBefore(countP,originalHeader.firstChild);
     }, 100);
   }
 
   private setupCartListener(sc: any) {
     sc.addEventListener('cartchange', () => {
-      const total = sc.getCartTotal();
+      // const total = sc.getCartTotal();
       const count = sc.getCart().length;
+      const cart = sc.getCart();
 
-      console.log('Nuevo total:', total);
-      console.log('Asientos seleccionados:', count);
+      // Obtener todos los labels de los asientos seleccionados
+      const labels = cart.map(seat => seat.label).join(', ');
 
       const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `Tickets: ${count}`;
+      if (countP)       countP.textContent = `${count} tickets: \n ${labels}`;
     });
   }
 
@@ -453,7 +454,7 @@ export class SeatsPage {
   ionViewDidEnter() {
     const container = this.seatContainer.nativeElement;
     this.initSeatChart(container);
-    this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
+    // this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
 
     // Estado inicial
     //   const cart = sc.getCart().length;    //Obtiene la info del carrito
