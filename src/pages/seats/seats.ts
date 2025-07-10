@@ -361,20 +361,26 @@ export class SeatsPage {
       const scrollX = (container.scrollWidth - container.clientWidth) / 2;
       const scrollY = container.scrollHeight;
 
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
+
+      const countP = document.createElement('p');
+      countP.classList.add('cart-count');
+      countP.textContent = `${sc.getCart().length} tickets`;
+      originalHeader.insertBefore(countP, originalHeader.firstChild);
     });
   }
 
   private setupCartListener(sc: any) {
     sc.addEventListener('cartchange', () => {
-      const total = sc.getCartTotal();
+      // const total = sc.getCartTotal();
       const count = sc.getCart().length;
+      const cart = sc.getCart();
 
-      console.log('Nuevo total:', total);
-      console.log('Asientos seleccionados:', count);
+      // Obtener todos los labels de los asientos seleccionados
+      const labels = cart.map(seat => seat.label).join(', ');
 
       const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `Tickets: ${count}`;
+      if (countP) countP.textContent = `${count} tickets: \n ${labels}`;
     });
   }
 
