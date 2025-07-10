@@ -425,6 +425,7 @@ export class SeatsPage {
 
     // 4. Configura la lógica de submit
     this.setupSubmitHandler(this.sc);
+    return this.sc;
   }
 
   allowedPlatea() {
