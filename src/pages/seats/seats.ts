@@ -271,44 +271,55 @@ export class SeatsPage {
   }
 
   // Esta es la clave: Si no tiene saldo suficiente, solo muestra alerta
-  onSeatChange(selectedSeats: { row: number, col: number }[]) {
-    const miSesion = this.getSession();
-    this.blockedSeats = this.blockedSeats.filter(blocked =>
-      (blocked.sesionId === miSesion && blocked.expires > Date.now()) ||
-      selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now())
+ onSeatChange(selectedSeats: { row: number, col: number }[]) {
+  const miSesion = this.getSession();
+
+  // Solo mantiene los bloqueos de otros usuarios y los seleccionados de tu sesión
+  this.blockedSeats = this.blockedSeats.filter(blocked => {
+    // Si el asiento es tuyo y ya no está seleccionado, se elimina
+    if (blocked.sesionId === miSesion) {
+      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+    }
+    // Si es de otra sesión, se mantiene si está vigente
+    return blocked.expires > Date.now();
+  });
+
+  // Agrega los nuevos bloqueos para los asientos seleccionados no bloqueados ni vendidos
+  selectedSeats.forEach(seat => {
+    const platea = this.getPlateaDeAsiento(seat.row, seat.col);
+    let precio = 30;
+    if (platea === 'A') precio = 40;
+    if (platea === 'C') precio = 20;
+
+    if (
+      (platea === 'A' && this.dineroDisponible < 40) ||
+      (platea === 'B' && this.dineroDisponible < 30) ||
+      (platea === 'C' && this.dineroDisponible < 20)
+    ) {
+      // No permitir selección por presupuesto (puedes mostrar alerta)
+      return;
+    }
+    const alreadyBlocked = this.blockedSeats.some(
+      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
     );
-    selectedSeats.forEach(seat => {
-      const platea = this.getPlateaDeAsiento(seat.row, seat.col);
-      let precio = 30;
-      if (platea === 'A') precio = 40;
-      if (platea === 'C') precio = 20;
-      if (
-        (platea === 'A' && this.dineroDisponible < 40) ||
-        (platea === 'B' && this.dineroDisponible < 30) ||
-        (platea === 'C' && this.dineroDisponible < 20)
-      ) {
-        // NO lo bloquees, solo mensaje.
-        // (Si quieres impedir selección, puedes retornar aquí.)
-        return;
-      }
-      const alreadyBlocked = this.blockedSeats.some(
-        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-      );
-      const alreadySold = this.soldSeats.some(
-        s => s.row === seat.row && s.col === seat.col
-      );
-      if (!alreadyBlocked && !alreadySold) {
-        this.blockedSeats.push({
-          row: seat.row,
-          col: seat.col,
-          expires: Date.now() + this.blockTimes,
-          sesionId: miSesion
-        });
-      }
-    });
-    this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
-    this.saveSeatsToStorage();
-  }
+    const alreadySold = this.soldSeats.some(
+      s => s.row === seat.row && s.col === seat.col
+    );
+    if (!alreadyBlocked && !alreadySold) {
+      this.blockedSeats.push({
+        row: seat.row,
+        col: seat.col,
+        expires: Date.now() + this.blockTimes,
+        sesionId: miSesion
+      });
+    }
+  });
+
+  this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
+  this.saveSeatsToStorage(); // <--- Aquí actualiza el localStorage
+}
+
+
 
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
