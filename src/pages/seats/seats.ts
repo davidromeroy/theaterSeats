@@ -1,21 +1,16 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Platform } from 'ionic-angular';
 // import { map } from 'rxjs/operator/map';
 
 // import * as Seatchart from 'seatchart'; // <-- Importa la librería
 declare var require: any; // 👈 ayuda a TypeScript a compilar el require
 const Seatchart = require('seatchart');     // 👈 require directo
-const QRCode = require('qrcode'); 
+const QRCode = require('qrcode');
 
-/**
- * Generated class for the SeatsPage page.
- *
- * See https://ionicframework.com/docs/components/#navigation for more info on
- * Ionic pages and navigation.
- */
 const seatLetters = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G',
-  'H', 'J', 'K', 'L', 'M', 'N', 'O', 
+  'H', 'J', 'K', 'L', 'M', 'N', 'O',
   'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'
 ]; // 22 filas
 
@@ -45,7 +40,7 @@ const layout = [
   { active: [5, 17, 5], disabled: [4, 4], shiftLeft: 26 },     //B
   { active: [5, 16, 5], disabled: [4, 4], shiftLeft: 27 },     //A
 ];
-    
+
 @IonicPage()
 @Component({
   selector: 'page-seats',
@@ -53,11 +48,12 @@ const layout = [
 })
 export class SeatsPage {
   private sc: any;
+  loading = true;
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
   dineroDisponible = 30;
 
-  constructor(public navCtrl: NavController, public navParams: NavParams) {
+  constructor(public navCtrl: NavController, public navParams: NavParams, private platform: Platform) {
   }
 
   generateDisabledSeatsFromLayout() {
@@ -67,19 +63,19 @@ export class SeatsPage {
       let col = 0;
 
       // Desactivamos los asientos iniciales definidos por shiftLeft
-      for (let i = 0; i < rowLayout.shiftLeft-1; i++) {
+      for (let i = 0; i < rowLayout.shiftLeft - 1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
 
-      if (rowLayout.active[0]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft -1});
-      if (rowLayout.active[2]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 + -1});
+      if (rowLayout.active[0] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft - 1 });
+      if (rowLayout.active[2] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 + -1 });
 
       // Alternamos bloques de activos y deshabilitados
       rowLayout.active.forEach((activeSeats, i) => {
-        col += activeSeats+1;
+        col += activeSeats + 1;
 
         const gap = rowLayout.disabled[i] || 0;
-        for (let j = 0; j < gap-1; j++) {
+        for (let j = 0; j < gap - 1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
         }
       });
@@ -93,7 +89,7 @@ export class SeatsPage {
     return disabled;
   }
 
-  seatLabelSeatsFromLayout(index: any){
+  seatLabelSeatsFromLayout(index: any) {
     const rowLetter = seatLetters[seatLetters.length - 1 - index.row];
     const layoutRow = layout[index.row];
     if (!layoutRow) return '';
@@ -124,7 +120,7 @@ export class SeatsPage {
       const offset = col - rightStart;
       const labelNumber = 2 * offset + 1; // impares ascendentes
       return `${rowLetter}${labelNumber}`;
-    } else{
+    } else {
       return rowLetter
     }
 
@@ -178,7 +174,7 @@ export class SeatsPage {
     layout.forEach((rowLayout, rowIndex) => {
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
-      
+
       const colIndex = shift - 1;
       indexSeats.push({ row: rowIndex, col: colIndex });
 
@@ -190,7 +186,7 @@ export class SeatsPage {
     });
 
     return indexSeats;
-}
+  }
 
   options = {
     /**
@@ -241,9 +237,9 @@ export class SeatsPage {
       disabledSeats: this.generateDisabledSeatsFromLayout(),
       // columnSpacers: [0],
       // rowSpacers: [0],   // Posicion donde se pondrá un espacio entre filas. Index 4 forma un espacio entre la columna 4 y 5.
-     seatLabel: (index) => {
-      return this.seatLabelSeatsFromLayout(index);
-    },
+      seatLabel: (index) => {
+        return this.seatLabelSeatsFromLayout(index);
+      },
       indexerColumns: {
         visible: false,  //True por default, indices del 1 al 50 en este caso (this.columns)
       },
@@ -255,11 +251,11 @@ export class SeatsPage {
       },
       frontVisible: false, //True por default
     },
-    
+
     /**
      * Cart options.
      */
-    cart:{
+    cart: {
       // visible: false,        // True por default
       currency: '$',
       submitLabel: 'Reservar',  // Checkout por default
@@ -269,27 +265,27 @@ export class SeatsPage {
 
   // Función auxiliar para detectar platea por posición
   getPlateaForSeat = (row: number, col: number): string => {
-      // Platea A: bloque central de filas medias
-      const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+    // Platea A: bloque central de filas medias
+    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
 
-      // Platea C:
-      const plateaC = [
-        ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),       // laterales superiores
-        ...this.generateSideSeats([14], 5),                       // laterales en fila 14
-        ...this.generateSideSeats([15, 16, 17, 18, 19], 6),       // laterales en filas 15–19
-        ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5, 6])  //  centro en filas altas W–R
-      ];
+    // Platea C:
+    const plateaC = [
+      ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),       // laterales superiores
+      ...this.generateSideSeats([14], 5),                       // laterales en fila 14
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 6),       // laterales en filas 15–19
+      ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5, 6])  //  centro en filas altas W–R
+    ];
 
-      const inA = plateaA.some(s => s.row === row && s.col === col);
-      if (inA) return 'Platea A';
+    const inA = plateaA.some(s => s.row === row && s.col === col);
+    if (inA) return 'Platea A';
 
-      const inC = plateaC.some(s => s.row === row && s.col === col);
-      if (inC) return 'Platea C';
+    const inC = plateaC.some(s => s.row === row && s.col === col);
+    if (inC) return 'Platea C';
 
-      return 'Platea B'; // por defecto
+    return 'Platea B'; // por defecto
   };
 
-  goToQr(){
+  goToQr() {
     this.navCtrl.push('QrPage');
   }
 
@@ -305,15 +301,49 @@ export class SeatsPage {
 
   private relocateCart(container: HTMLElement, sc: any) {
     // Esperamos a que se renderice todo antes de mover el carrito
-    setTimeout(() => {
+    // setTimeout(() => {
+    //   const cartContainer = document.getElementById('floatingCart');
+    //   if (!cartContainer) return;
+
+    //   const originalHeader = container.querySelector('.sc-cart-header');
+    //   const originalFooter = container.querySelector('.sc-cart-footer');
+    //   const originalContainer = container.querySelector('.sc-right-container');
+
+    //   // Reubica el carrito flotante tras el render
+    //   if (originalHeader && originalFooter) {
+    //     const existingHeader = cartContainer.querySelector('.sc-cart-header');
+    //     const existingFooter = cartContainer.querySelector('.sc-cart-footer');
+    //     if (existingHeader) existingHeader.remove();
+    //     if (existingFooter) existingFooter.remove();
+    //     cartContainer.appendChild(originalHeader);
+    //     cartContainer.appendChild(originalFooter);
+    //   }
+
+    //   if (originalContainer) originalContainer.remove();
+
+    //   // Añade contador personalizado
+    //   const existing = cartContainer.querySelector('.cart-count');
+    //   if (existing) existing.remove();
+
+    //   //Scroll al centro inferior
+    //   const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+    //   const scrollY = container.scrollHeight;
+
+    //   container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
+
+    //   // const countP = document.createElement('p');
+    //   // countP.classList.add('cart-count');
+    //   // countP.textContent = `Tickets: ${sc.getCart().length}`;
+    //   // originalHeader.appendChild(countP);
+    // }, 100);
+    requestAnimationFrame(() => {
       const cartContainer = document.getElementById('floatingCart');
       if (!cartContainer) return;
 
       const originalHeader = container.querySelector('.sc-cart-header');
       const originalFooter = container.querySelector('.sc-cart-footer');
       const originalContainer = container.querySelector('.sc-right-container');
-      
-      // Reubica el carrito flotante tras el render
+
       if (originalHeader && originalFooter) {
         const existingHeader = cartContainer.querySelector('.sc-cart-header');
         const existingFooter = cartContainer.querySelector('.sc-cart-footer');
@@ -325,21 +355,14 @@ export class SeatsPage {
 
       if (originalContainer) originalContainer.remove();
 
-      // Añade contador personalizado
       const existing = cartContainer.querySelector('.cart-count');
       if (existing) existing.remove();
 
-      //Scroll al centro inferior
       const scrollX = (container.scrollWidth - container.clientWidth) / 2;
       const scrollY = container.scrollHeight;
 
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
-
-      // const countP = document.createElement('p');
-      // countP.classList.add('cart-count');
-      // countP.textContent = `Tickets: ${sc.getCart().length}`;
-      // originalHeader.appendChild(countP);
-    }, 100);
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
+    });
   }
 
   private setupCartListener(sc: any) {
@@ -385,7 +408,7 @@ export class SeatsPage {
     this.insertStage(container);
 
     // 2. Reubica el carrito flotante
-    this.relocateCart(container, this.sc);
+    //this.relocateCart(container, this.sc);
 
     // 3. Configura el evento de carrito
     this.setupCartListener(this.sc);
@@ -394,7 +417,7 @@ export class SeatsPage {
     this.setupSubmitHandler(this.sc);
   }
 
-  allowedPlatea (){
+  allowedPlatea() {
     // Base de asientos deshabilitados según layout (pasillos, espacios)
     const baseDisabledSeats = this.generateDisabledSeatsFromLayout();
     // Definición de asientos por platea
@@ -409,7 +432,7 @@ export class SeatsPage {
       'Platea B': []
     };
 
-      // Completar Platea B con asientos que no están en A ni en C ni están deshabilitados
+    // Completar Platea B con asientos que no están en A ni en C ni están deshabilitados
     for (let row = 0; row < this.options.map.rows; row++) {
       for (let col = 0; col < this.options.map.columns; col++) {
         const index = { row, col };
@@ -450,30 +473,45 @@ export class SeatsPage {
     this.options.map.reservedSeats = reservedSeats;
   }
 
+  zoomLevel = 1;
+
+  zoomIn() {
+    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
+    this.applyZoom();
+  }
+
+  zoomOut() {
+    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
+    this.applyZoom();
+  }
+
+  applyZoom() {
+    const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
+    if (mapInner) {
+      mapInner.style.transform = `scale(${this.zoomLevel})`;
+      mapInner.style.transformOrigin = 'center center';
+    }
+  }
+
   ionViewDidEnter() {
-    const container = this.seatContainer.nativeElement;
-    this.initSeatChart(container);
-    this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
+    // const container = this.seatContainer.nativeElement;
+    // this.loading = false;
+    //this.initSeatChart(container);
+    //this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
 
-    // Estado inicial
-    //   const cart = sc.getCart().length;    //Obtiene la info del carrito
-    //   console.log('Total a pagar:', sc.getCartTotal());
-    //   console.log('Asientos seleccionados:', cart);
-    //   // const seat = sc.getSeat({0,5});    //Obtiene la info del carrito
-    //   // const clear = sc.clearCart(); //Limpia el carrito
+    this.platform.ready().then(() => {
+      requestAnimationFrame(() => {
+        const container = this.seatContainer.nativeElement;
 
-    //   // console.log(sc.store.getOptions())
-    //   // console.log('Seat:', seat);
+        const seatChart = this.initSeatChart(container); // retorna el chart
+        this.allowedPlatea();
 
- 
-  //     const cart2 = customCartContainer.querySelector('.sc-right-container');
-  //     if (cart2) {
-  //       cart2.remove();
-  //     }
+        this.loading = false; //  ocultar skeleton
 
-  //   // sc.addEventListener('submit', function handleSubmit(e) {
-  //   //     alert('Total: ' + e.total + '$');
-  //   // });
+        // ahora que todo es visible, mueve el carrito
+        this.relocateCart(container, seatChart);
+      });
+    });
 
-  } 
+  }
 }
