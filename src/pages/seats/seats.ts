@@ -4,37 +4,36 @@ declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
 
-// --- Configuración de filas, columnas y layout de asientos ---
 const seatLetters = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G',
-  'H', 'J', 'K', 'L', 'M', 'N', 'O', 
+  'H', 'J', 'K', 'L', 'M', 'N', 'O',
   'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W'
 ];
 const rows = seatLetters.length;
-const columns = 62;
+const columns = 64;
 const layout = [
-  { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 16 },
-  { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },
-  { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },
-  { active: [8, 35, 8], disabled: [4, 4], shiftLeft: 2 },
-  { active: [8, 34, 8], disabled: [4, 4], shiftLeft: 3 },
-  { active: [8, 33, 8], disabled: [4, 4], shiftLeft: 4 },
-  { active: [8, 32, 8], disabled: [4, 4], shiftLeft: 5 },
-  { active: [9, 31, 9], disabled: [4, 4], shiftLeft: 4 },
-  { active: [9, 30, 9], disabled: [4, 4], shiftLeft: 5 },
-  { active: [9, 29, 9], disabled: [4, 4], shiftLeft: 6 },
-  { active: [9, 28, 9], disabled: [4, 4], shiftLeft: 7 },
-  { active: [9, 26, 9], disabled: [4, 4], shiftLeft: 9 },
-  { active: [9, 25, 9], disabled: [4, 4], shiftLeft: 10 },
-  { active: [9, 24, 9], disabled: [4, 4], shiftLeft: 11 },
-  { active: [9, 23, 9], disabled: [4, 4], shiftLeft: 12 },
-  { active: [10, 22, 10], disabled: [4, 4], shiftLeft: 11 },
-  { active: [10, 21, 10], disabled: [4, 4], shiftLeft: 12 },
-  { active: [10, 20, 10], disabled: [4, 4], shiftLeft: 13 },
-  { active: [10, 19, 10], disabled: [4, 4], shiftLeft: 14 },
-  { active: [10, 18, 10], disabled: [4, 4], shiftLeft: 15 },
-  { active: [5, 17, 5], disabled: [4, 4], shiftLeft: 26 },
-  { active: [5, 16, 5], disabled: [4, 4], shiftLeft: 27 },
+  { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 17 }, //W
+  { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 }, //V
+  { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 }, //U
+  { active: [8, 35, 8], disabled: [4, 4], shiftLeft: 2 }, //T
+  { active: [8, 34, 8], disabled: [4, 4], shiftLeft: 3 }, //S
+  { active: [8, 33, 8], disabled: [4, 4], shiftLeft: 4 }, //R
+  { active: [8, 32, 8], disabled: [4, 4], shiftLeft: 5 }, //Q
+  { active: [9, 31, 9], disabled: [4, 4], shiftLeft: 4 }, //P
+  { active: [9, 30, 9], disabled: [4, 4], shiftLeft: 5 }, //O
+  { active: [9, 29, 9], disabled: [4, 4], shiftLeft: 6 }, //N
+  { active: [9, 28, 9], disabled: [4, 4], shiftLeft: 7 }, //M
+  { active: [9, 26, 9], disabled: [4, 4], shiftLeft: 9 }, //L
+  { active: [9, 25, 9], disabled: [4, 4], shiftLeft: 10 }, //K
+  { active: [9, 24, 9], disabled: [4, 4], shiftLeft: 11 }, //J
+  { active: [9, 23, 9], disabled: [4, 4], shiftLeft: 12 }, //H
+  { active: [10, 22, 10], disabled: [4, 4], shiftLeft: 11 }, //G
+  { active: [10, 21, 10], disabled: [4, 4], shiftLeft: 12 }, //F
+  { active: [10, 20, 10], disabled: [4, 4], shiftLeft: 13 }, //E
+  { active: [10, 19, 10], disabled: [4, 4], shiftLeft: 14 }, //D
+  { active: [10, 18, 10], disabled: [4, 4], shiftLeft: 15 }, //C
+  { active: [5, 17, 5], disabled: [4, 4], shiftLeft: 26 }, //B
+  { active: [5, 16, 5], disabled: [4, 4], shiftLeft: 27 }  //A
 ];
 
 @IonicPage()
@@ -44,38 +43,38 @@ const layout = [
 })
 export class SeatsPage {
   private sc: any;
-
   @ViewChild('seatContainer') seatContainer: ElementRef;
+  dineroDisponible = 60; // Cambia esto para probar otras plateas
 
-  blockedSeats: { row: number, col: number, expires: number,sesionId:string }[] = [];
+  blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
-  blockTimes = 1 * 60 * 1000; // 2 minutos
+  blockTimes = 2 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
-   
-  
-  constructor(public navCtrl: NavController, public navParams: NavParams) {}
-  
-  getSession(){
-  let sendId = sessionStorage.getItem('sendId');
-  if(!sendId) {
-    sendId = Math.random().toString(36).substr(2,9) + Date.now();
-    sessionStorage.setItem('sendId', sendId);
-  }
-  return sendId;
-}
 
-  // --- Métodos para el layout y etiquetas ---
+  constructor(public navCtrl: NavController, public navParams: NavParams) { }
+
+  getSession() {
+    let sendId = sessionStorage.getItem('sendId');
+    if (!sendId) {
+      sendId = Math.random().toString(36).substr(2, 9) + Date.now();
+      sessionStorage.setItem('sendId', sendId);
+    }
+    return sendId;
+  }
+
   generateDisabledSeatsFromLayout() {
     const disabled = [];
     layout.forEach((rowLayout, rowIndex) => {
       let col = 0;
-      for (let i = 0; i < rowLayout.shiftLeft; i++) {
+      for (let i = 0; i < rowLayout.shiftLeft - 1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
+      if (rowLayout.active[0] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft - 1 });
+      if (rowLayout.active[2] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 + -1 });
       rowLayout.active.forEach((activeSeats, i) => {
-        col += activeSeats;
+        col += activeSeats + 1;
         const gap = rowLayout.disabled[i] || 0;
-        for (let j = 0; j < gap; j++) {
+        for (let j = 0; j < gap - 1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
         }
       });
@@ -111,8 +110,9 @@ export class SeatsPage {
       const offset = col - rightStart;
       const labelNumber = 2 * offset + 1;
       return `${rowLetter}${labelNumber}`;
+    } else {
+      return rowLetter;
     }
-    return '';
   }
 
   generateCentralBlockSeats(seatRows) {
@@ -130,7 +130,6 @@ export class SeatsPage {
     });
     return seats;
   }
-
   generateSideSeats(seatRows, count) {
     const seats = [];
     seatRows.forEach(row => {
@@ -148,8 +147,35 @@ export class SeatsPage {
     });
     return seats;
   }
+  generateIndexSeats() {
+    const indexSeats = [];
+    layout.forEach((rowLayout, rowIndex) => {
+      const shift = rowLayout.shiftLeft;
+      const [leftCount, centerCount, rightCount] = rowLayout.active;
+      const colIndex = shift - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex });
+      const colIndex2 = shift + leftCount + 4 - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex2 });
+      const colIndex3 = shift + leftCount + 4 + centerCount + 4 - 1;
+      indexSeats.push({ row: rowIndex, col: colIndex3 });
+    });
+    return indexSeats;
+  }
 
-  // --- Opciones de Seatchart ---
+  // Plateas según el color (para la lógica de saldo)
+  getPlateaDeAsiento(row: number, col: number) {
+    const centralA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+    const plateaC = [
+      ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
+      ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
+      ...this.generateSideSeats([14], 5),
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
+    ];
+    if (centralA.some(s => s.row === row && s.col === col)) return 'A';
+    if (plateaC.some(s => s.row === row && s.col === col)) return 'C';
+    return 'B';
+  }
+
   options = {
     map: {
       rows,
@@ -166,41 +192,33 @@ export class SeatsPage {
           label: 'Platea C',
           price: 20,
           cssClass: 'plateaC',
-          seatRows: [0, 1, 2, 3, 4, 5],
           seats: [
-            ...this.generateSideSeats([6], 8),
+            ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
+            ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
             ...this.generateSideSeats([14], 5),
             ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
           ]
+        },
+        index: {
+          label: 'Index',
+          price: 0,
+          cssClass: 'index',
+          seats: this.generateIndexSeats(),
         }
       },
-      reservedSeats: [
-        {
-         label: 'Reservado',
-    price: 0,
-    cssClass: 'sc-seat-reserved'
-      }
-      ],
+      reservedSeats: [], // solo temporal
       disabledSeats: [],
       seatLabel: (index) => {
         return this.seatLabelSeatsFromLayout(index);
       },
       indexerColumns: { visible: false },
-      indexerRows: {
-        label: (column: number) => {
-          return `${seatLetters[seatLetters.length - column - 1]}`
-        },
-      },
+      indexerRows: { visible: false },
       frontVisible: false,
     },
-    cart: {
-      currency: '$',
-      submitLabel: 'Reservar',
-    },
+    cart: { currency: '$', submitLabel: 'Reservar' },
     legendVisible: false,
   };
 
-  // --- Métodos de integración localStorage ---
   saveSeatsToStorage() {
     localStorage.setItem('blockedSeats', JSON.stringify(this.blockedSeats));
     localStorage.setItem('soldSeats', JSON.stringify(this.soldSeats));
@@ -210,7 +228,6 @@ export class SeatsPage {
     this.soldSeats = JSON.parse(localStorage.getItem('soldSeats') || '[]');
     this.refreshMap();
   }
-
   clearExpiredBlocks() {
     const before = this.blockedSeats.length;
     this.blockedSeats = this.blockedSeats.filter(b => b.expires > Date.now());
@@ -219,11 +236,10 @@ export class SeatsPage {
       this.refreshMap();
     }
   }
-  
   isblocked(row: number, col: number): boolean {
-    const miSesion = this.getSession();   
+    const miSesion = this.getSession();
     return this.blockedSeats.some(
-       b => row === b.row && col === b.col && b.expires > Date.now() && b.sesionId !== miSesion
+      b => row === b.row && col === b.col && b.expires > Date.now() && b.sesionId !== miSesion
     );
   }
   isSold(row: number, col: number): boolean {
@@ -232,33 +248,49 @@ export class SeatsPage {
     );
   }
 
+  // Solo disables de layout + vendidos
   getDisabledSeats() {
-    const miSesion = this.getSession();
-    const blocks = this.blockedSeats.filter(b => b.expires > Date.now()&& b.sesionId !== miSesion);
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      ...blocks.map(b => ({ row: b.row, col: b.col })),
       ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
     ];
+  }
+  // Solo reserved seats: temporalmente bloqueados por otra sesión
+  getReservedSeats() {
+    const miSesion = this.getSession();
+    return this.blockedSeats
+      .filter(b => b.expires > Date.now() && b.sesionId !== miSesion)
+      .map(b => ({ row: b.row, col: b.col }));
   }
 
   refreshMap() {
     if (!this.seatContainer) return;
     this.options.map.disabledSeats = this.getDisabledSeats();
+    this.options.map.reservedSeats = this.getReservedSeats();
     this.initSeatChart(this.seatContainer.nativeElement);
   }
 
-  // --- ESTE ES EL MÉTODO CLAVE DE SINCRONIZACIÓN ---
+  // Esta es la clave: Si no tiene saldo suficiente, solo muestra alerta
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
-    // simulacion de una sesion
     const miSesion = this.getSession();
-    // Mantén solo bloqueos de asientos actualmente seleccionados y vigentes
     this.blockedSeats = this.blockedSeats.filter(blocked =>
       (blocked.sesionId === miSesion && blocked.expires > Date.now()) ||
       selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now())
     );
-    // Agrega bloqueos para asientos seleccionados no bloqueados ni vendidos
     selectedSeats.forEach(seat => {
+      const platea = this.getPlateaDeAsiento(seat.row, seat.col);
+      let precio = 30;
+      if (platea === 'A') precio = 40;
+      if (platea === 'C') precio = 20;
+      if (
+        (platea === 'A' && this.dineroDisponible < 40) ||
+        (platea === 'B' && this.dineroDisponible < 30) ||
+        (platea === 'C' && this.dineroDisponible < 20)
+      ) {
+        // NO lo bloquees, solo mensaje.
+        // (Si quieres impedir selección, puedes retornar aquí.)
+        return;
+      }
       const alreadyBlocked = this.blockedSeats.some(
         b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
       );
@@ -276,10 +308,8 @@ export class SeatsPage {
     });
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
     this.saveSeatsToStorage();
-    // NO recargues el mapa aquí para no perder selección.
   }
 
-  // --- Métodos de integración Seatchart (escenario, carrito, QR) ---
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
     if (!outer) return;
@@ -290,77 +320,88 @@ export class SeatsPage {
     stageDiv.textContent = 'Escenario';
     mapContainer.appendChild(stageDiv);
   }
+private relocateCart(container: HTMLElement, sc: any) {
+  setTimeout(() => {
+    const cartContainer = document.getElementById('floatingCart');
+    if (!cartContainer) return;
+    const originalHeader = container.querySelector('.sc-cart-header');
+    const originalFooter = container.querySelector('.sc-cart-footer');
+    const originalContainer = container.querySelector('.sc-right-container');
+    if (originalHeader && originalFooter) {
+      const existingHeader = cartContainer.querySelector('.sc-cart-header');
+      const existingFooter = cartContainer.querySelector('.sc-cart-footer');
+      if (existingHeader) existingHeader.remove();
+      if (existingFooter) existingFooter.remove();
+      cartContainer.appendChild(originalHeader);
+      cartContainer.appendChild(originalFooter);
 
-  private relocateCart(container: HTMLElement, sc: any) {
-    setTimeout(() => {
-      const cartContainer = document.getElementById('floatingCart');
-      if (!cartContainer) return;
-      const originalHeader = container.querySelector('.sc-cart-header');
-      const originalFooter = container.querySelector('.sc-cart-footer');
-      const originalContainer = container.querySelector('.sc-right-container');
-      if (originalHeader && originalFooter) {
-        const existingHeader = cartContainer.querySelector('.sc-cart-header');
-        const existingFooter = cartContainer.querySelector('.sc-cart-footer');
-        if (existingHeader) existingHeader.remove();
-        if (existingFooter) existingFooter.remove();
-        cartContainer.appendChild(originalHeader);
-        cartContainer.appendChild(originalFooter);
+      // Solo si existe el header, agregamos el contador
+      let countP = cartContainer.querySelector('.cart-count');
+      if (!countP) {
+        countP = document.createElement('p');
+        countP.classList.add('cart-count');
+        countP.textContent = `${sc.getCart().length} tickets`;
+        // Solo insertamos si existe originalHeader
+        if (originalHeader) {
+          originalHeader.insertBefore(countP, originalHeader.firstChild);
+        }
       }
-      if (originalContainer) originalContainer.remove();
-      const existing = cartContainer.querySelector('.cart-count');
-      if (existing) existing.remove();
-      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-      const scrollY = container.scrollHeight;
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
-    }, 100);
-  }
+    }
+    if (originalContainer) originalContainer.remove();
+    const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+    const scrollY = container.scrollHeight;
+    container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
+  }, 200); // Puede subir el delay si aún no existen los nodos (de 100 a 200 ms)
+}
+
 
   private setupCartListener(sc: any) {
-
     sc.addEventListener('cartchange', () => {
-      // ¡Esta es la SELECCIÓN real del usuario!
       const cart = sc.getCart();
+      // ALERTA si selecciona un asiento de platea no permitida
+      let mensajeSaldo = '';
+      cart.forEach((item: any) => {
+        const row = item.index.row;
+        const col = item.index.col;
+        const platea = this.getPlateaDeAsiento(row, col);
+        if (
+          (platea === 'A' && this.dineroDisponible < 40) ||
+          (platea === 'B' && this.dineroDisponible < 30) ||
+          (platea === 'C' && this.dineroDisponible < 20)
+        ) {
+          mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
+        }
+      });
+      if (mensajeSaldo) {
+        alert(mensajeSaldo);
+        sc.clearCart(); // limpia selección
+        this.cart = [];
+        return;
+      }
       this.cart = cart.map((item: any) => ({
         row: item.index.row,
         col: item.index.col
       }));
       this.onSeatChange(this.cart);
+      const labels = cart.map(seat => seat.label).join(', ');
       const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `Tickets: ${this.cart.length}`;
+      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
-    setTimeout(() => {
-      const seats = document.querySelectorAll('.sc-seat');
-      Array.prototype.forEach.call(seats,(seatEl: HTMLElement) => {
-        seatEl.addEventListener('click',(e:any) => {
-          const dataIndex = seatEl.getAttribute('data-index');
-          if(dataIndex && seatEl.classList.contains('sc-seat-disabled')) {
-            const [row,col]= dataIndex.split(',').map(Number);
-            if (this.isblocked(row, col)) {
-              e.stopPropagation();
-                        alert(`Asiento ${row}-${col} está temporalmente reservado por otro usuario. Intenta en 2 minutos.`);
-
-            }
-          }
-        })
-
-      })
-    
-    },700)
   }
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
       const cart = sc.getCart();
-      if(!cart || cart.length === 0) {
+      if (!cart || cart.length === 0) {
         alert('No hay asientos seleccionados.');
-        return
+        return;
       }
       const qrDataPromises = cart.map(async (seat) => {
         const seatIndex = seat.index;
         const row = seatIndex.row;
         const col = seatIndex.col;
         const label = sc.store.options.map.seatLabel(seatIndex);
-        const platea = "X";
+        const platea = this.getPlateaDeAsiento(row, col);
         const qrText = `🎭 Platea: ${platea}\n🪑 Asiento: ${label}`;
         const qrImage = await QRCode.toDataURL(qrText);
         return { label, platea, qrText, qrImage };
@@ -379,9 +420,8 @@ export class SeatsPage {
     this.setupSubmitHandler(this.sc);
   }
 
-  // --- Inicialización y sincronización entre pestañas ---
   ionViewDidLoad() {
-    this.loadSeatsFromStorage(); // Al abrir la página
+    this.loadSeatsFromStorage();
     setInterval(() => this.clearExpiredBlocks(), 1000);
     window.addEventListener('storage', () => {
       this.loadSeatsFromStorage();
@@ -390,6 +430,6 @@ export class SeatsPage {
 
   ionViewDidEnter() {
     const container = this.seatContainer.nativeElement;
-    this.initSeatChart(container);
+    this.refreshMap();
   }
 }
