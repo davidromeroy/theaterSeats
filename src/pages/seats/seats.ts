@@ -309,45 +309,44 @@ export class SeatsPage {
     this.initSeatChart(this.seatContainer.nativeElement);
   }
 
-  onSeatChange(selectedSeats: { row: number, col: number }[]) {
-    const miSesion = this.getSession();
-    this.blockedSeats = this.blockedSeats.filter(blocked => {
-      if (blocked.sesionId === miSesion) {
-        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
-      }
-      return blocked.expires > Date.now();
-    });
-    selectedSeats.forEach(seat => {
-      const platea = this.getPlateaDeAsiento(seat.row, seat.col);
-      let precio = 30;
-      if (platea === 'A') precio = 40;
-      if (platea === 'C') precio = 20;
-      if (
-        (platea === 'A' && this.userAmount < 40) ||
-        (platea === 'B' && this.userAmount < 30) ||
-        (platea === 'C' && this.userAmount < 20)
-      ) {
-        // No permitir selección por presupuesto (puedes mostrar alerta)
-        return;
-      }
-      const alreadyBlocked = this.blockedSeats.some(
-        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-      );
-      const alreadySold = this.soldSeats.some(
-        s => s.row === seat.row && s.col === seat.col
-      );
-      if (!alreadyBlocked && !alreadySold) {
-        this.blockedSeats.push({
-          row: seat.row,
-          col: seat.col,
-          expires: Date.now() + this.blockTimes,
-          sesionId: miSesion
-        });
-      }
-    });
-    this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
-    this.saveSeatsToStorage();
-  }
+ onSeatChange(selectedSeats: { row: number, col: number }[]) {
+  const miSesion = this.getSession();
+
+  // Elimina bloqueos de mi sesión que ya no están seleccionados
+  this.blockedSeats = this.blockedSeats.filter(blocked => {
+    if (blocked.sesionId === miSesion) {
+      // Solo conserva los aún seleccionados
+      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+    }
+    return blocked.expires > Date.now();
+  });
+
+  // Añade nuevos bloqueos
+  selectedSeats.forEach(seat => {
+    const alreadyBlocked = this.blockedSeats.some(
+      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+    );
+    const alreadySold = this.soldSeats.some(
+      s => s.row === seat.row && s.col === seat.col
+    );
+    if (!alreadyBlocked && !alreadySold) {
+      this.blockedSeats.push({
+        row: seat.row,
+        col: seat.col,
+        expires: Date.now() + this.blockTimes,
+        sesionId: miSesion
+      });
+    }
+  });
+
+  // Actualiza tu carrito
+  this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
+
+  // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
+  this.saveSeatsToStorage();
+}
+
+
 
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
@@ -405,46 +404,46 @@ export class SeatsPage {
   }
 
   private setupCartListener(sc: any) {
-    sc.addEventListener('cartchange', () => {
-      const count = sc.getCart().length;
-      const cart = sc.getCart();
-      const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
-      const saldoRestante = this.userAmount - totalGastado;
+  sc.addEventListener('cartchange', () => {
+    const cart = sc.getCart();
 
-      // Actualizar plateas disponibles según saldo restante
-      this.updateSeatColorsByUserAmount(saldoRestante);
-
-      
-      const labels = cart.map(seat => seat.label).join(', ');
-
-      let mensajeSaldo = '';
-      cart.forEach((item: any) => {
-        const row = item.index.row;
-        const col = item.index.col;
-        const platea = this.getPlateaDeAsiento(row, col);
-        if (
-          (platea === 'A' && this.userAmount < 40) ||
-          (platea === 'B' && this.userAmount < 30) ||
-          (platea === 'C' && this.userAmount < 20)
-        ) {
-          mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
-        }
-      });
-      if (mensajeSaldo) {
-        alert(mensajeSaldo);
-        sc.clearCart();
-        this.cart = [];
-        return;
+    // Valida saldo antes de guardar nada
+    let mensajeSaldo = '';
+    cart.forEach((item: any) => {
+      const row = item.index.row;
+      const col = item.index.col;
+      const platea = this.getPlateaDeAsiento(row, col);
+      if (
+        (platea === 'A' && this.userAmount < 40) ||
+        (platea === 'B' && this.userAmount < 30) ||
+        (platea === 'C' && this.userAmount < 20)
+      ) {
+        mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
       }
-      this.cart = cart.map((item: any) => ({
-        row: item.index.row,
-        col: item.index.col
-      }));
-      this.onSeatChange(this.cart);
-      const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
-  }
+
+    if (mensajeSaldo) {
+      alert(mensajeSaldo);
+      sc.clearCart();
+      this.cart = [];
+      return;
+    }
+
+    // Solo guarda los bloqueos y el cart en storage
+    this.cart = cart.map((item: any) => ({
+      row: item.index.row,
+      col: item.index.col
+    }));
+
+    this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
+
+    // Muestra la cantidad seleccionada (esto es solo visual)
+    const labels = cart.map(seat => seat.label).join(', ');
+    const countP = document.querySelector('.cart-count');
+    if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+  });
+}
+
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
