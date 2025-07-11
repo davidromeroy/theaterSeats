@@ -17,7 +17,7 @@
       <ion-slide *ngFor="let item of qrBoletos">
         <div class="ticket-card">
           <div class="ticket-header" [ngClass]="item.claseHeader">
-            <strong>{{ item.platea }}</strong>
+            <strong>Platea {{ item.platea }}</strong>
           </div>
           <div class="ticket-body">
             <img [src]="item.qrImage" [alt]="item.label" />

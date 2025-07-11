@@ -28,12 +28,12 @@ export class QrPage {
   }
 
   getHeaderClass(platea) {
-  switch (platea.toLowerCase()) {
-    case 'platea a':
+  switch (platea) {
+    case 'A':
       return 'header-plateaA';
-    case 'platea b':
+    case 'B':
       return 'header-plateaB';
-    case 'platea c':
+    case 'C':
       return 'header-plateaC';
     default:
       return 'header-default';
