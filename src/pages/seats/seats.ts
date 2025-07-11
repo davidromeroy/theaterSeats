@@ -2,7 +2,6 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
-// import { map } from 'rxjs/operator/map';
 
 // import * as Seatchart from 'seatchart'; // <-- Importa la librería
 declare var require: any; // 👈 ayuda a TypeScript a compilar el require
@@ -52,13 +51,15 @@ export class SeatsPage {
   loading = true;
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
-  userAmount = 30;
+  userAmount = 100;
+  zoomLevel: number;
 
   constructor(public alertCtrl: AlertController,
     public navCtrl: NavController,
     public navParams: NavParams, private platform: Platform) {
   }
 
+  // Funciones para general los asientos desde el Layout
   generateDisabledSeatsFromLayout() {
     const disabled = [];
 
@@ -304,42 +305,8 @@ export class SeatsPage {
 
   private relocateCart(container: HTMLElement, sc: any) {
     // Esperamos a que se renderice todo antes de mover el carrito
-    // setTimeout(() => {
-    //   const cartContainer = document.getElementById('floatingCart');
-    //   if (!cartContainer) return;
-
-    //   const originalHeader = container.querySelector('.sc-cart-header');
-    //   const originalFooter = container.querySelector('.sc-cart-footer');
-    //   const originalContainer = container.querySelector('.sc-right-container');
-
-    //   // Reubica el carrito flotante tras el render
-    //   if (originalHeader && originalFooter) {
-    //     const existingHeader = cartContainer.querySelector('.sc-cart-header');
-    //     const existingFooter = cartContainer.querySelector('.sc-cart-footer');
-    //     if (existingHeader) existingHeader.remove();
-    //     if (existingFooter) existingFooter.remove();
-    //     cartContainer.appendChild(originalHeader);
-    //     cartContainer.appendChild(originalFooter);
-    //   }
-
-    //   if (originalContainer) originalContainer.remove();
-
-    //   // Añade contador personalizado
-    //   const existing = cartContainer.querySelector('.cart-count');
-    //   if (existing) existing.remove();
-
-    //   //Scroll al centro inferior
-    //   const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-    //   const scrollY = container.scrollHeight;
-
-    //   container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
-
-    //   // const countP = document.createElement('p');
-    //   // countP.classList.add('cart-count');
-    //   // countP.textContent = `Tickets: ${sc.getCart().length}`;
-    //   // originalHeader.appendChild(countP);
-    // }, 100);
     requestAnimationFrame(() => {
+    // setTimeout(() => {
       const cartContainer = document.getElementById('floatingCart');
       if (!cartContainer) return;
 
@@ -347,6 +314,7 @@ export class SeatsPage {
       const originalFooter = container.querySelector('.sc-cart-footer');
       const originalContainer = container.querySelector('.sc-right-container');
 
+      // Reubica el carrito flotante tras el render
       if (originalHeader && originalFooter) {
         const existingHeader = cartContainer.querySelector('.sc-cart-header');
         const existingFooter = cartContainer.querySelector('.sc-cart-footer');
@@ -361,15 +329,21 @@ export class SeatsPage {
       const existing = cartContainer.querySelector('.cart-count');
       if (existing) existing.remove();
 
+      //Scroll al centro inferior
       const scrollX = (container.scrollWidth - container.clientWidth) / 2;
       const scrollY = container.scrollHeight;
 
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); //'auto'
 
       const countP = document.createElement('p');
       countP.classList.add('cart-count');
       countP.textContent = `${sc.getCart().length} tickets`;
       originalHeader.insertBefore(countP, originalHeader.firstChild);
+
+      this.zoomLevel = 0.5;
+      this.applyZoom();
+
+    // }, 50);
     });
   }
 
@@ -427,23 +401,6 @@ export class SeatsPage {
     });
   }
 
-  private initSeatChart(container: HTMLElement) {
-    this.sc = new Seatchart(container, this.options);
-
-    // 1. Inserta el escenario (STAGE)
-    this.insertStage(container);
-
-    // 2. Reubica el carrito flotante
-    //this.relocateCart(container, this.sc);
-
-    // 3. Configura el evento de carrito
-    this.setupCartListener(this.sc);
-
-    // 4. Configura la lógica de submit
-    this.setupSubmitHandler(this.sc);
-    return this.sc;
-  }
-  
   reserveConfirm(qrDataArray) {
     console.log(qrDataArray)
     const alert = this.alertCtrl.create({
@@ -470,49 +427,21 @@ export class SeatsPage {
     alert.present();
   }
 
-  zoomLevel = 1;
+  private initSeatChart(container: HTMLElement) {
+    this.sc = new Seatchart(container, this.options);
 
-  zoomIn() {
-    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
-    this.applyZoom();
-  }
+    // 1. Inserta el escenario (STAGE)
+    this.insertStage(container);
 
-  zoomOut() {
-    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
-    this.applyZoom();
-  }
+    // 2. Reubica el carrito flotante
+    this.relocateCart(container, this.sc);
 
-  applyZoom() {
-    const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
-    if (mapInner) {
-      mapInner.style.transform = `scale(${this.zoomLevel})`;
-      mapInner.style.transformOrigin = 'center center';
-    }
-  }
+    // 3. Configura el evento de carrito
+    this.setupCartListener(this.sc);
 
-  ionViewDidEnter() {
-    // const container = this.seatContainer.nativeElement;
-    // this.loading = false;
-    //this.initSeatChart(container);
-    //this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
-
-    this.platform.ready().then(() => {
-      requestAnimationFrame(() => {
-
-        this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
-
-        const container = this.seatContainer.nativeElement;
-
-        const seatChart = this.initSeatChart(container); // retorna el chart
-
-
-        this.loading = false; //  ocultar skeleton
-
-        // ahora que todo es visible, mueve el carrito
-        this.relocateCart(container, seatChart);
-      });
-    });
-
+    // 4. Configura la lógica de submit
+    this.setupSubmitHandler(this.sc);
+    return this.sc;
   }
 
   //Metodo Nuevo para asignar los colores a las plateas de acurdo a la cantidad de puntos disponibles
@@ -538,5 +467,39 @@ export class SeatsPage {
       this.options.map.seatTypes.default.cssClass = 'plomo';
       this.options.map.seatTypes.plateaC.cssClass = 'plomo';
     }
+  }
+  
+  zoomIn() {
+    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
+    console.log(this.zoomLevel)
+    this.applyZoom();
+  }
+
+  zoomOut() {
+    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
+    console.log(this.zoomLevel)
+    this.applyZoom();
+  }
+
+  applyZoom() {
+    const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
+    if (mapInner) {
+      mapInner.style.transform = `scale(${this.zoomLevel})`;
+      mapInner.style.transformOrigin = 'center bottom';
+    }
+  }
+
+  ionViewDidEnter() {
+    this.platform.ready().then(() => {
+      // requestAnimationFrame(() => {
+
+        this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
+        const container = this.seatContainer.nativeElement;
+        this.initSeatChart(container); // retorna el chart
+
+        this.loading = false; //  ocultar skeleton
+      // });
+    });
+
   }
 }
