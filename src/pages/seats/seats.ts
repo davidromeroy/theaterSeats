@@ -55,7 +55,7 @@ export class SeatsPage {
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
-  blockTimes = 2 * 60 * 1000; // 2 minutos
+  blockTimes = 1 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
 
@@ -361,56 +361,59 @@ export class SeatsPage {
   }
 
   private relocateCart(container: HTMLElement, sc: any) {
-    // Esperamos a que se renderice todo antes de mover el carrito
-    requestAnimationFrame(() => {
-    // setTimeout(() => {
-      const cartContainer = document.getElementById('floatingCart');
-      if (!cartContainer) return;
-      const originalHeader = container.querySelector('.sc-cart-header');
-      const originalFooter = container.querySelector('.sc-cart-footer');
-      const originalContainer = container.querySelector('.sc-right-container');
+  // Espera a que todo el DOM se haya renderizado por Seatchart
+  requestAnimationFrame(() => {
+    const cartContainer = document.getElementById('floatingCart');
+    if (!cartContainer) return;
 
-      // Reubica el carrito flotante tras el render
-      if (originalHeader && originalFooter) {
-        const existingHeader = cartContainer.querySelector('.sc-cart-header');
-        const existingFooter = cartContainer.querySelector('.sc-cart-footer');
-        if (existingHeader) existingHeader.remove();
-        if (existingFooter) existingFooter.remove();
-        cartContainer.appendChild(originalHeader);
-        cartContainer.appendChild(originalFooter);
+    const originalHeader = container.querySelector('.sc-cart-header');
+    const originalFooter = container.querySelector('.sc-cart-footer');
+    const originalContainer = container.querySelector('.sc-right-container');
 
-        let countP = cartContainer.querySelector('.cart-count');
-        if (!countP) {
-          countP = document.createElement('p');
-          countP.classList.add('cart-count');
-          countP.textContent = `${sc.getCart().length} tickets`;
-          if (originalHeader) {
-            originalHeader.insertBefore(countP, originalHeader.firstChild);
-          }
-        }
-      }
-      if (originalContainer) originalContainer.remove();
+    // Si no existe el header o el footer, no sigas (evita errores)
+    if (!originalHeader || !originalFooter) return;
 
-      const existing = cartContainer.querySelector('.cart-count');
-      if (existing) existing.remove();
+    // Remueve headers/footers anteriores del carrito flotante si existen
+    const existingHeader = cartContainer.querySelector('.sc-cart-header');
+    const existingFooter = cartContainer.querySelector('.sc-cart-footer');
+    if (existingHeader) existingHeader.remove();
+    if (existingFooter) existingFooter.remove();
 
-      //Scroll al centro inferior
-      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-      const scrollY = container.scrollHeight;
+    // Agrega el header y footer al contenedor flotante
+    cartContainer.appendChild(originalHeader);
+    cartContainer.appendChild(originalFooter);
 
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); //'auto'
+    // Remueve cualquier contador anterior
+    const existingCount = cartContainer.querySelector('.cart-count');
+    if (existingCount) existingCount.remove();
 
-      const countP = document.createElement('p');
-      countP.classList.add('cart-count');
-      countP.textContent = `${sc.getCart().length} tickets`;
+    // Crea el contador de tickets
+    const countP = document.createElement('p');
+    countP.classList.add('cart-count');
+    countP.textContent = `${sc.getCart().length} tickets`;
+
+    // Intenta insertarlo al principio del header, si existe
+    if (originalHeader.firstChild) {
       originalHeader.insertBefore(countP, originalHeader.firstChild);
+    } else {
+      originalHeader.appendChild(countP);
+    }
 
-      this.zoomLevel = 0.5;
-      this.applyZoom();
+    // Elimina el contenedor derecho original si existe
+    if (originalContainer) originalContainer.remove();
 
-    // }, 50);
-    });
-  }
+    // Centra el scroll del mapa (opcional)
+    const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+    const scrollY = container.scrollHeight;
+    container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
+
+    // Opcional: aplica zoom si lo necesitas
+    this.zoomLevel = this.zoomLevel || 0.5;
+    this.applyZoom();
+  });
+}
+
+
 
   //Nuevo: Metodo para calcular el precio del asiento
   private getSeatPrice(seat: any): number {
