@@ -16,7 +16,7 @@
     <ion-slides *ngIf="qrBoletos.length > 1" pager="true">
       <ion-slide *ngFor="let item of qrBoletos">
         <div class="ticket-card">
-          <div class="ticket-header">
+          <div class="ticket-header" [ngClass]="item.claseHeader">
             <strong>{{ item.platea }}</strong>
           </div>
           <div class="ticket-body">
@@ -29,7 +29,7 @@
 
     <!-- Vista sin slider cuando hay solo un código -->
     <div *ngIf="qrBoletos.length === 1" class="ticket-card single-qr">
-      <div class="ticket-header">
+      <div class="ticket-header" [ngClass]="qrBoletos[0].claseHeader">
         <strong>{{ qrBoletos[0].platea }}</strong>
       </div>
       <div class="ticket-body">

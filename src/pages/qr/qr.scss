@@ -11,12 +11,30 @@ page-qr {
   }
 
   .swiper-pagination {
-    bottom: -30px !important; // aleja los controles
+    bottom: 10px !important; // aleja los controles
+    text-align: center;
+    z-index: 10;
+
+    .swiper-pagination-bullet {
+      width: 10px;
+      height: 10px;
+      background: #ccc;
+      opacity: 1;
+      margin: 0 4px;
+      border-radius: 50%;
+      transition: background 0.3s ease;
+    }
+
+    .swiper-pagination-bullet-active {
+      background: #3f51b5; // color principal
+    }
   }
 
   ion-slide {
     display: flex;
     justify-content: center;
+    min-height: 350px; // Ajusta según necesidad
+    margin-bottom: 40px;
   }
 
   .ticket-card {
@@ -57,6 +75,20 @@ page-qr {
     color: white;
     padding: 12px;
     font-size: 18px;
+    &.header-plateaA {
+      background-color: rgb(255, 255, 0); // rojo fuerte
+      color: #333;
+    }
+
+    &.header-plateaB {
+      background-color:  rgb(67, 227, 211); // ámbar
+      color: #333;
+    }
+
+    &.header-plateaC {
+      background-color: rgb(255, 0, 255); // verde
+      color: #333;
+    }
   }
 
   .ticket-body {
