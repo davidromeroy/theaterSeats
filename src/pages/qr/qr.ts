@@ -16,20 +16,29 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
   templateUrl: 'qr.html',
 })
 export class QrPage {
-  qrDataArray: any[] = [];
+  // qrDataArray: any[] = [];
   qrBoletos: any[] = [];
 
   constructor(public navCtrl: NavController, public navParams: NavParams) {
-      this.qrDataArray = this.navParams.get('qrDataArray') || [];
-      if (this.qrBoletos.length == 0){
-        this.qrBoletos = this.qrDataArray;
-      } else {
-        this.qrBoletos = [
-          ...this.qrBoletos,
-          this.qrDataArray
-        ]
-      }
+      this.qrBoletos = this.navParams.get('qrDataArray') || [];
+      this.qrBoletos = this.qrBoletos.map(boleto => ({
+        ...boleto,
+        claseHeader: this.getHeaderClass(boleto.platea)
+      }));
   }
+
+  getHeaderClass(platea) {
+  switch (platea) {
+    case 'A':
+      return 'header-plateaA';
+    case 'B':
+      return 'header-plateaB';
+    case 'C':
+      return 'header-plateaC';
+    default:
+      return 'header-default';
+  }
+}
 
   goToHome() {
     this.navCtrl.pop;

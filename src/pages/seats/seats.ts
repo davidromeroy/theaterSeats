@@ -2,7 +2,6 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
-// import { map } from 'rxjs/operator/map';
 
 declare var require: any;
 const Seatchart = require('seatchart');
@@ -63,6 +62,13 @@ export class SeatsPage {
   soldSeats: { row: number, col: number }[] = [];
   blockTimes = 2 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
+  userAmount = 60; // Cambia esto para probar otras plateas
+
+  blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
+  soldSeats: { row: number, col: number }[] = [];
+  blockTimes = 2 * 60 * 1000; // 2 minutos
+  cart: { row: number, col: number }[] = [];
+  zoomLevel: number;
 
   constructor(
     public navCtrl: NavController,
@@ -80,22 +86,32 @@ export class SeatsPage {
     return sendId;
   }
 
+    public navParams: NavParams,
+    public alertCtrl: AlertController,
+    private platform: Platform
+  ) { }
+
+  getSession() {
+    let sendId = sessionStorage.getItem('sendId');
+    if (!sendId) {
+      sendId = Math.random().toString(36).substr(2, 9) + Date.now();
+      sessionStorage.setItem('sendId', sendId);
+    }
+    return sendId;
+  }
+
+  // Funciones para general los asientos desde el Layout
   generateDisabledSeatsFromLayout() {
     const disabled = [];
-
     layout.forEach((rowLayout, rowIndex) => {
       let col = 0;
-
-
       for (let i = 0; i < rowLayout.shiftLeft - 1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
-
       if (rowLayout.active[0] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft - 1 });
       if (rowLayout.active[2] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 - 1 });
       rowLayout.active.forEach((activeSeats, i) => {
         col += activeSeats + 1;
-
         const gap = rowLayout.disabled[i] || 0;
         for (let j = 0; j < gap - 1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
@@ -107,7 +123,6 @@ export class SeatsPage {
         disabled.push({ row: rowIndex, col: col++ });
       }
     });
-
     return disabled;
   }
 
@@ -115,22 +130,16 @@ export class SeatsPage {
     const rowLetter = seatLetters[seatLetters.length - 1 - index.row];
     const layoutRow = layout[index.row];
     if (!layoutRow) return '';
-
     const [leftBlock, centerBlock, rightBlock] = layoutRow.active;
     const [gap1, gap2] = layoutRow.disabled;
     const shift = layoutRow.shiftLeft;
-
     const col = index.col;
-
     const leftStart = shift;
     const leftEnd = leftStart + leftBlock - 1;
-
     const centerStart = leftEnd + 1 + gap1;
     const centerEnd = centerStart + centerBlock - 1;
-
     const rightStart = centerEnd + 1 + gap2;
     const rightEnd = rightStart + rightBlock - 1;
-
     if (col >= leftStart && col <= leftEnd) {
       const offset = col - leftStart;
       const labelNumber = 2 * (leftBlock - offset);
@@ -157,13 +166,11 @@ export class SeatsPage {
       const left = rowLayout.active[0];
       const pasillo = rowLayout.disabled[0];
       const center = rowLayout.active[1];
-
       for (let i = 0; i < center; i++) {
         const col = shift + left + pasillo + i;
         seats.push({ row, col });
       }
     });
-
     return seats;
   }
 
@@ -173,40 +180,30 @@ export class SeatsPage {
       const rowLayout = layout[row];
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
-
-
       for (let i = 0; i < Math.min(count, leftCount); i++) {
         const col = shift + i;
         seats.push({ row, col });
       }
-
-
       for (let i = 0; i < Math.min(count, rightCount); i++) {
         const col = shift + leftCount + 8 + centerCount + (rightCount - count) + i;
         seats.push({ row, col });
       }
     });
-
     return seats;
   }
 
   generateIndexSeats() {
     const indexSeats = [];
-
     layout.forEach((rowLayout, rowIndex) => {
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
-
       const colIndex = shift - 1;
       indexSeats.push({ row: rowIndex, col: colIndex });
-
       const colIndex2 = shift + leftCount + 4 - 1;
       indexSeats.push({ row: rowIndex, col: colIndex2 });
-
       const colIndex3 = shift + leftCount + 4 + centerCount + 4 - 1;
       indexSeats.push({ row: rowIndex, col: colIndex3 });
     });
-
     return indexSeats;
   }
 
@@ -379,13 +376,72 @@ export class SeatsPage {
   // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
   this.saveSeatsToStorage();
 }
+  // Solo disables de layout + vendidos
+  getDisabledSeats() {
+    return [
+      ...this.generateDisabledSeatsFromLayout(),
+      ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
+    ];
+  }
+  // Solo reserved seats: temporalmente bloqueados por otra sesión
+  getReservedSeats() {
+    const miSesion = this.getSession();
+    return this.blockedSeats
+      .filter(b => b.expires > Date.now() && b.sesionId !== miSesion)
+      .map(b => ({ row: b.row, col: b.col }));
+  }
+
+  refreshMap() {
+    if (!this.seatContainer) return;
+    this.options.map.disabledSeats = this.getDisabledSeats();
+    this.options.map.reservedSeats = this.getReservedSeats();
+    this.initSeatChart(this.seatContainer.nativeElement);
+  }
+
+ onSeatChange(selectedSeats: { row: number, col: number }[]) {
+  const miSesion = this.getSession();
+
+  // Elimina bloqueos de mi sesión que ya no están seleccionados
+  this.blockedSeats = this.blockedSeats.filter(blocked => {
+    if (blocked.sesionId === miSesion) {
+      // Solo conserva los aún seleccionados
+      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+    }
+    return blocked.expires > Date.now();
+  });
+
+  // Añade nuevos bloqueos
+  selectedSeats.forEach(seat => {
+    const alreadyBlocked = this.blockedSeats.some(
+      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+    );
+    const alreadySold = this.soldSeats.some(
+      s => s.row === seat.row && s.col === seat.col
+    );
+    if (!alreadyBlocked && !alreadySold) {
+      this.blockedSeats.push({
+        row: seat.row,
+        col: seat.col,
+        expires: Date.now() + this.blockTimes,
+        sesionId: miSesion
+      });
+    }
+  });
+
+  // Actualiza tu carrito
+  this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
+
+  // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
+  this.saveSeatsToStorage();
+}
+
+
 
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
     if (!outer) return;
     const mapContainer = outer.querySelector('.sc-map-inner-container');
     if (!mapContainer) return;
-
     const stageDiv = document.createElement('div');
     stageDiv.className = 'stage';
     stageDiv.textContent = 'Escenario';
@@ -394,13 +450,16 @@ export class SeatsPage {
 
   private relocateCart(container: HTMLElement, sc: any) {
     setTimeout(() => {
+    // Esperamos a que se renderice todo antes de mover el carrito
+    requestAnimationFrame(() => {
+    // setTimeout(() => {
       const cartContainer = document.getElementById('floatingCart');
       if (!cartContainer) return;
-
       const originalHeader = container.querySelector('.sc-cart-header');
       const originalFooter = container.querySelector('.sc-cart-footer');
       const originalContainer = container.querySelector('.sc-right-container');
-      
+
+      // Reubica el carrito flotante tras el render
       if (originalHeader && originalFooter) {
         const existingHeader = cartContainer.querySelector('.sc-cart-header');
         const existingFooter = cartContainer.querySelector('.sc-cart-footer');
@@ -421,12 +480,27 @@ export class SeatsPage {
       }
       if (originalContainer) originalContainer.remove();
 
+      const existing = cartContainer.querySelector('.cart-count');
+      if (existing) existing.remove();
 
-
+      //Scroll al centro inferior
       const scrollX = (container.scrollWidth - container.clientWidth) / 2;
       const scrollY = container.scrollHeight;
       container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
     }, 200);
+
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' }); //'auto'
+
+      const countP = document.createElement('p');
+      countP.classList.add('cart-count');
+      countP.textContent = `${sc.getCart().length} tickets`;
+      originalHeader.insertBefore(countP, originalHeader.firstChild);
+
+      this.zoomLevel = 0.5;
+      this.applyZoom();
+
+    // }, 50);
+    });
   }
 
   //Nuevo: Metodo para calcular el precio del asiento
@@ -502,6 +576,46 @@ export class SeatsPage {
   });
 }
 
+  sc.addEventListener('cartchange', () => {
+    const cart = sc.getCart();
+
+    // Valida saldo antes de guardar nada
+    let mensajeSaldo = '';
+    cart.forEach((item: any) => {
+      const row = item.index.row;
+      const col = item.index.col;
+      const platea = this.getPlateaDeAsiento(row, col);
+      if (
+        (platea === 'A' && this.userAmount < 40) ||
+        (platea === 'B' && this.userAmount < 30) ||
+        (platea === 'C' && this.userAmount < 20)
+      ) {
+        mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
+      }
+    });
+
+    if (mensajeSaldo) {
+      alert(mensajeSaldo);
+      sc.clearCart();
+      this.cart = [];
+      return;
+    }
+
+    // Solo guarda los bloqueos y el cart en storage
+    this.cart = cart.map((item: any) => ({
+      row: item.index.row,
+      col: item.index.col
+    }));
+
+    this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
+
+    // Muestra la cantidad seleccionada (esto es solo visual)
+    const labels = cart.map(seat => seat.label).join(', ');
+    const countP = document.querySelector('.cart-count');
+    if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+  });
+}
+
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
@@ -523,6 +637,10 @@ export class SeatsPage {
         alert('No hay asientos seleccionados.');
         return;
       }
+      if (!cart || cart.length === 0) {
+        alert('No hay asientos seleccionados.');
+        return;
+      }
       const qrDataPromises = cart.map(async (seat) => {
         const seatIndex = seat.index;
         const row = seatIndex.row;
@@ -533,32 +651,13 @@ export class SeatsPage {
         const qrImage = await QRCode.toDataURL(qrText);
         return { label, platea, qrText, qrImage };
       });
-
-
       const qrDataArray = await Promise.all(qrDataPromises);
-
-
       this.reserveConfirm(qrDataArray);
       
     });
-
-  }
-
-  private initSeatChart(container: HTMLElement) {
-    this.sc = new Seatchart(container, this.options);
-
-
-    this.insertStage(container);
-    this.relocateCart(container, this.sc);
-    this.setupCartListener(this.sc);
-
-
-    this.setupSubmitHandler(this.sc);
-
   }
 
   reserveConfirm(qrDataArray) {
-
     const alert = this.alertCtrl.create({
       title: 'Confirmar reserva',
       message: '¿Deseas reservar estos asientos?',
@@ -573,9 +672,7 @@ export class SeatsPage {
         {
           text: 'Enviar',
           handler: () => {
-            
             this.navCtrl.push('QrPage', { qrDataArray });
-
           }
         }
       ]
@@ -591,15 +688,65 @@ export class SeatsPage {
     });
   }
 
-  zoomLevel = 1;
+  ionViewDidLoad() {
+    this.loadSeatsFromStorage();
+    setInterval(() => this.clearExpiredBlocks(), 1000);
+    window.addEventListener('storage', () => {
+      this.loadSeatsFromStorage();
+    });
+  }
 
+  private initSeatChart(container: HTMLElement) {
+    this.sc = new Seatchart(container, this.options);
+
+    // 1. Inserta el escenario (STAGE)
+    this.insertStage(container);
+
+    // 2. Reubica el carrito flotante
+    this.relocateCart(container, this.sc);
+
+    // 3. Configura el evento de carrito
+    this.setupCartListener(this.sc);
+
+    // 4. Configura la lógica de submit
+    this.setupSubmitHandler(this.sc);
+    return this.sc;
+  }
+
+  //Metodo Nuevo para asignar los colores a las plateas de acurdo a la cantidad de puntos disponibles
+  private updateSeatColorsByUserAmount(amount: number): void {
+    // Tiene suficiente para todas las plateas
+    if (amount >= 40) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plateaA';
+      this.options.map.seatTypes.default.cssClass = 'plateaB';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  Puede pagar Platea B y Platea C
+    } else if (amount >= 30) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plateaB';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  Solo puede pagar Platea C
+    } else if (amount >= 20) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plomo';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  No tiene suficiente para ninguna platea
+    } else {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plomo';
+      this.options.map.seatTypes.plateaC.cssClass = 'plomo';
+    }
+  }
+  
   zoomIn() {
     this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
+    console.log(this.zoomLevel)
     this.applyZoom();
   }
 
   zoomOut() {
     this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
+    console.log(this.zoomLevel)
     this.applyZoom();
   }
 
@@ -607,36 +754,21 @@ export class SeatsPage {
     const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
     if (mapInner) {
       mapInner.style.transform = `scale(${this.zoomLevel})`;
-      mapInner.style.transformOrigin = 'center center';
+      mapInner.style.transformOrigin = 'center bottom';
     }
   }
 
   ionViewDidEnter() {
-
-    
     this.platform.ready().then(() => {
-      requestAnimationFrame(() => {
-
-        
-        this.initialUserAmount = this.userAmount;//Nuevo: Asigna saldo inicial dinámicamente
+      // requestAnimationFrame(() => {
 
         this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
-
         const container = this.seatContainer.nativeElement;
-        
-        const seatChart = this.initSeatChart(container); // retorna el chart
-        
+        this.initSeatChart(container); // retorna el chart
 
         this.loading = false; //  ocultar skeleton
-
-        // ahora que todo es visible, mueve el carrito
-        this.relocateCart(container, seatChart);
-
-        this.initSeatChart(container);
-        
-        this.refreshMap();
-      });
+      // });
     });
-  }
 
+  }
 }
