@@ -325,6 +325,14 @@ page-seats {
     // border-radius: 4px;
   }
 
+  // NUEVA CLASE PLATA GRIS PLOMO
+  .plomo {
+    background-color: #757370;
+    color: black;
+    pointer-events: none !important;
+    cursor: not-allowed !important; 
+  }
+
   .index {
     pointer-events: none; // ❌ No se puede hacer clic
     cursor: default; // 👉 Cursor normal 

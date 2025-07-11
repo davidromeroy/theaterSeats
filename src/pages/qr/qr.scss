@@ -1,15 +1,88 @@
 page-qr {
-    .qr-wrapper {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-    }
+  .qr-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
 
-    .qr-wrapper img {
-        max-width: 200px;
-        border: 2px solid #ccc;
-        border-radius: 8px;
-        padding: 10px;
-        background-color: #fff;
-    }
+  ion-slides {
+    margin-bottom: 40px; // separa los botones
+  }
+
+  .swiper-pagination {
+    bottom: -30px !important; // aleja los controles
+  }
+
+  ion-slide {
+    display: flex;
+    justify-content: center;
+  }
+
+  .ticket-card {
+    width: 90%;
+    max-width: 320px;
+    background: linear-gradient(135deg, #f4f4f4, #ffffff);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin: 20px auto;
+    overflow: hidden;
+    border: 2px dashed #ccc;
+    position: relative;
+    text-align: center;
+  }
+
+  .ticket-card::before, .ticket-card::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .ticket-card::before {
+    left: -12px;
+  }
+
+  .ticket-card::after {
+    right: -12px;
+  }
+
+  .ticket-header {
+    background-color: #3f51b5;
+    color: white;
+    padding: 12px;
+    font-size: 18px;
+  }
+
+  .ticket-body {
+    padding: 16px;
+  }
+
+  .ticket-body img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+    background-color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .ticket-body p {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+  }
+  
+
+  .single-qr {
+    @extend .ticket-card;
+  }
 }
+
