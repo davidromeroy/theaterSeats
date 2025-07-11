@@ -310,42 +310,42 @@ export class SeatsPage {
     this.initSeatChart(this.seatContainer.nativeElement);
   }
 
- onSeatChange(selectedSeats: { row: number, col: number }[]) {
-  const miSesion = this.getSession();
+  onSeatChange(selectedSeats: { row: number, col: number }[]) {
+    const miSesion = this.getSession();
 
-  // Elimina bloqueos de mi sesión que ya no están seleccionados
-  this.blockedSeats = this.blockedSeats.filter(blocked => {
-    if (blocked.sesionId === miSesion) {
-      // Solo conserva los aún seleccionados
-      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
-    }
-    return blocked.expires > Date.now();
-  });
+    // Elimina bloqueos de mi sesión que ya no están seleccionados
+    this.blockedSeats = this.blockedSeats.filter(blocked => {
+      if (blocked.sesionId === miSesion) {
+        // Solo conserva los aún seleccionados
+        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+      }
+      return blocked.expires > Date.now();
+    });
 
-  // Añade nuevos bloqueos
-  selectedSeats.forEach(seat => {
-    const alreadyBlocked = this.blockedSeats.some(
-      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-    );
-    const alreadySold = this.soldSeats.some(
-      s => s.row === seat.row && s.col === seat.col
-    );
-    if (!alreadyBlocked && !alreadySold) {
-      this.blockedSeats.push({
-        row: seat.row,
-        col: seat.col,
-        expires: Date.now() + this.blockTimes,
-        sesionId: miSesion
-      });
-    }
-  });
+    // Añade nuevos bloqueos
+    selectedSeats.forEach(seat => {
+      const alreadyBlocked = this.blockedSeats.some(
+        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+      );
+      const alreadySold = this.soldSeats.some(
+        s => s.row === seat.row && s.col === seat.col
+      );
+      if (!alreadyBlocked && !alreadySold) {
+        this.blockedSeats.push({
+          row: seat.row,
+          col: seat.col,
+          expires: Date.now() + this.blockTimes,
+          sesionId: miSesion
+        });
+      }
+    });
 
-  // Actualiza tu carrito
-  this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
+    // Actualiza tu carrito
+    this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
 
-  // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
-  this.saveSeatsToStorage();
-}
+    // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
+    this.saveSeatsToStorage();
+  }
 
 
 
@@ -361,57 +361,57 @@ export class SeatsPage {
   }
 
   private relocateCart(container: HTMLElement, sc: any) {
-  // Espera a que todo el DOM se haya renderizado por Seatchart
-  requestAnimationFrame(() => {
-    const cartContainer = document.getElementById('floatingCart');
-    if (!cartContainer) return;
+    // Espera a que todo el DOM se haya renderizado por Seatchart
+    requestAnimationFrame(() => {
+      const cartContainer = document.getElementById('floatingCart');
+      if (!cartContainer) return;
 
-    const originalHeader = container.querySelector('.sc-cart-header');
-    const originalFooter = container.querySelector('.sc-cart-footer');
-    const originalContainer = container.querySelector('.sc-right-container');
+      const originalHeader = container.querySelector('.sc-cart-header');
+      const originalFooter = container.querySelector('.sc-cart-footer');
+      const originalContainer = container.querySelector('.sc-right-container');
 
-    // Si no existe el header o el footer, no sigas (evita errores)
-    if (!originalHeader || !originalFooter) return;
+      // Si no existe el header o el footer, no sigas (evita errores)
+      if (!originalHeader || !originalFooter) return;
 
-    // Remueve headers/footers anteriores del carrito flotante si existen
-    const existingHeader = cartContainer.querySelector('.sc-cart-header');
-    const existingFooter = cartContainer.querySelector('.sc-cart-footer');
-    if (existingHeader) existingHeader.remove();
-    if (existingFooter) existingFooter.remove();
+      // Remueve headers/footers anteriores del carrito flotante si existen
+      const existingHeader = cartContainer.querySelector('.sc-cart-header');
+      const existingFooter = cartContainer.querySelector('.sc-cart-footer');
+      if (existingHeader) existingHeader.remove();
+      if (existingFooter) existingFooter.remove();
 
-    // Agrega el header y footer al contenedor flotante
-    cartContainer.appendChild(originalHeader);
-    cartContainer.appendChild(originalFooter);
+      // Agrega el header y footer al contenedor flotante
+      cartContainer.appendChild(originalHeader);
+      cartContainer.appendChild(originalFooter);
 
-    // Remueve cualquier contador anterior
-    const existingCount = cartContainer.querySelector('.cart-count');
-    if (existingCount) existingCount.remove();
+      // Remueve cualquier contador anterior
+      const existingCount = cartContainer.querySelector('.cart-count');
+      if (existingCount) existingCount.remove();
 
-    // Crea el contador de tickets
-    const countP = document.createElement('p');
-    countP.classList.add('cart-count');
-    countP.textContent = `${sc.getCart().length} tickets`;
+      // Crea el contador de tickets
+      const countP = document.createElement('p');
+      countP.classList.add('cart-count');
+      countP.textContent = `${sc.getCart().length} tickets`;
 
-    // Intenta insertarlo al principio del header, si existe
-    if (originalHeader.firstChild) {
-      originalHeader.insertBefore(countP, originalHeader.firstChild);
-    } else {
-      originalHeader.appendChild(countP);
-    }
+      // Intenta insertarlo al principio del header, si existe
+      if (originalHeader.firstChild) {
+        originalHeader.insertBefore(countP, originalHeader.firstChild);
+      } else {
+        originalHeader.appendChild(countP);
+      }
 
-    // Elimina el contenedor derecho original si existe
-    if (originalContainer) originalContainer.remove();
+      // Elimina el contenedor derecho original si existe
+      if (originalContainer) originalContainer.remove();
 
-    // Centra el scroll del mapa (opcional)
-    const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-    const scrollY = container.scrollHeight;
-    container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
+      // Centra el scroll del mapa (opcional)
+      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+      const scrollY = container.scrollHeight;
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
 
-    // Opcional: aplica zoom si lo necesitas
-    this.zoomLevel = this.zoomLevel || 0.5;
-    this.applyZoom();
-  });
-}
+      // Opcional: aplica zoom si lo necesitas
+      this.zoomLevel = this.zoomLevel || 0.5;
+      this.applyZoom();
+    });
+  }
 
 
 
@@ -428,45 +428,45 @@ export class SeatsPage {
   }
 
   private setupCartListener(sc: any) {
-  sc.addEventListener('cartchange', () => {
-    const cart = sc.getCart();
+    sc.addEventListener('cartchange', () => {
+      const cart = sc.getCart();
 
-    // Valida saldo antes de guardar nada
-    let mensajeSaldo = '';
-    cart.forEach((item: any) => {
-      const row = item.index.row;
-      const col = item.index.col;
-      const platea = this.getPlateaDeAsiento(row, col);
-      if (
-        (platea === 'A' && this.userAmount < 40) ||
-        (platea === 'B' && this.userAmount < 30) ||
-        (platea === 'C' && this.userAmount < 20)
-      ) {
-        mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
+      // Valida saldo antes de guardar nada
+      let mensajeSaldo = '';
+      cart.forEach((item: any) => {
+        const row = item.index.row;
+        const col = item.index.col;
+        const platea = this.getPlateaDeAsiento(row, col);
+        if (
+          (platea === 'A' && this.userAmount < 40) ||
+          (platea === 'B' && this.userAmount < 30) ||
+          (platea === 'C' && this.userAmount < 20)
+        ) {
+          mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
+        }
+      });
+
+      if (mensajeSaldo) {
+        alert(mensajeSaldo);
+        sc.clearCart();
+        this.cart = [];
+        return;
       }
+
+      // Solo guarda los bloqueos y el cart en storage
+      this.cart = cart.map((item: any) => ({
+        row: item.index.row,
+        col: item.index.col
+      }));
+
+      this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
+
+      // Muestra la cantidad seleccionada (esto es solo visual)
+      const labels = cart.map(seat => seat.label).join(', ');
+      const countP = document.querySelector('.cart-count');
+      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
-
-    if (mensajeSaldo) {
-      alert(mensajeSaldo);
-      sc.clearCart();
-      this.cart = [];
-      return;
-    }
-
-    // Solo guarda los bloqueos y el cart en storage
-    this.cart = cart.map((item: any) => ({
-      row: item.index.row,
-      col: item.index.col
-    }));
-
-    this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
-
-    // Muestra la cantidad seleccionada (esto es solo visual)
-    const labels = cart.map(seat => seat.label).join(', ');
-    const countP = document.querySelector('.cart-count');
-    if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
-  });
-}
+  }
 
 
   private setupSubmitHandler(sc: any) {
@@ -488,7 +488,7 @@ export class SeatsPage {
       });
       const qrDataArray = await Promise.all(qrDataPromises);
       this.reserveConfirm(qrDataArray);
-      
+
     });
   }
 
@@ -564,7 +564,7 @@ export class SeatsPage {
       this.options.map.seatTypes.plateaC.cssClass = 'plomo';
     }
   }
-  
+
   zoomIn() {
     this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
     console.log(this.zoomLevel)
@@ -589,11 +589,11 @@ export class SeatsPage {
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
 
-        this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
-        const container = this.seatContainer.nativeElement;
-        this.initSeatChart(container); // retorna el chart
+      this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
+      const container = this.seatContainer.nativeElement;
+      this.initSeatChart(container); // retorna el chart
 
-        this.loading = false; //  ocultar skeleton
+      this.loading = false; //  ocultar skeleton
       // });
     });
 

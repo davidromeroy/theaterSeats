@@ -148,6 +148,8 @@ page-seats {
   // 🔳 Mapa de asientos
   .sc-map-inner-container {
     flex-shrink: 0;
+    touch-action: none; // necesario para detectar gestos correctamente
+    user-select: none;
   }
 
   // Botenes Zoom 
@@ -282,6 +284,7 @@ page-seats {
     justify-content: center;
     align-items: center;
     transition: transform 0.2s ease, background-color 0.2s ease;
+
     &:active {
       transform: scale(0.9);
     }
@@ -291,14 +294,15 @@ page-seats {
     min-width: 14px !important;
     width: 14px !important;
   }
+
   .sc-seat.sc-seat-reserved {
-  background: #ff9800 !important;   // naranja o el color que prefieras
-  color: #fff !important;
-  opacity: 0.95;
-  font-weight: bold;
-  cursor: not-allowed;
-  border: 2px solid #fff;
-}
+    background: #ff9800 !important; // naranja o el color que prefieras
+    color: #fff !important;
+    opacity: 0.95;
+    font-weight: bold;
+    cursor: not-allowed;
+    border: 2px solid #fff;
+  }
 
   .sc-seat.sc-seat-selected {
     cursor: pointer;
@@ -338,7 +342,7 @@ page-seats {
     background-color: #757370;
     color: black;
     pointer-events: none !important;
-    cursor: not-allowed !important; 
+    cursor: not-allowed !important;
   }
 
   .index {
