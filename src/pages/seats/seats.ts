@@ -1,12 +1,12 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 // import { map } from 'rxjs/operator/map';
 
-// import * as Seatchart from 'seatchart'; // <-- Importa la librería
-declare var require: any; // 👈 ayuda a TypeScript a compilar el require
-const Seatchart = require('seatchart');     // 👈 require directo
-const QRCode = require('qrcode'); 
+declare var require: any;
+const Seatchart = require('seatchart');
+const QRCode = require('qrcode');
 
 const seatLetters = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G',
@@ -16,6 +16,7 @@ const seatLetters = [
 
 const rows = seatLetters.length; // 22
 const columns = 64; // o 60, dependiendo del espacio que quieras
+
 const layout = [
   { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 17 },      //W
   { active: [8, 36, 8], disabled: [4, 4], shiftLeft: 1 },       //V
@@ -29,16 +30,16 @@ const layout = [
   { active: [9, 29, 9], disabled: [4, 4], shiftLeft: 6 },       //N
   { active: [9, 28, 9], disabled: [4, 4], shiftLeft: 7 },       //M
   { active: [9, 26, 9], disabled: [4, 4], shiftLeft: 9 },       //L
-  { active: [9, 25, 9], disabled: [4, 4], shiftLeft: 10 },       //K
-  { active: [9, 24, 9], disabled: [4, 4], shiftLeft: 11 },       //J
-  { active: [9, 23, 9], disabled: [4, 4], shiftLeft: 12 },       //H
-  { active: [10, 22, 10], disabled: [4, 4], shiftLeft: 11 },     //G
-  { active: [10, 21, 10], disabled: [4, 4], shiftLeft: 12 },     //F
-  { active: [10, 20, 10], disabled: [4, 4], shiftLeft: 13 },     //E
-  { active: [10, 19, 10], disabled: [4, 4], shiftLeft: 14 },     //D
-  { active: [10, 18, 10], disabled: [4, 4], shiftLeft: 15 },     //C
-  { active: [5, 17, 5], disabled: [4, 4], shiftLeft: 26 },     //B
-  { active: [5, 16, 5], disabled: [4, 4], shiftLeft: 27 },     //A
+  { active: [9, 25, 9], disabled: [4, 4], shiftLeft: 10 },      //K
+  { active: [9, 24, 9], disabled: [4, 4], shiftLeft: 11 },      //J
+  { active: [9, 23, 9], disabled: [4, 4], shiftLeft: 12 },      //H
+  { active: [10, 22, 10], disabled: [4, 4], shiftLeft: 11 },    //G
+  { active: [10, 21, 10], disabled: [4, 4], shiftLeft: 12 },    //F
+  { active: [10, 20, 10], disabled: [4, 4], shiftLeft: 13 },    //E
+  { active: [10, 19, 10], disabled: [4, 4], shiftLeft: 14 },    //D
+  { active: [10, 18, 10], disabled: [4, 4], shiftLeft: 15 },    //C
+  { active: [5, 17, 5], disabled: [4, 4], shiftLeft: 26 },      //B
+  { active: [5, 16, 5], disabled: [4, 4], shiftLeft: 27 },      //A
 ];
 
 @IonicPage()
@@ -48,6 +49,8 @@ const layout = [
 })
 export class SeatsPage {
   private sc: any;
+  loading = true;
+
   @ViewChild('seatContainer') seatContainer: ElementRef;
   dineroDisponible = 60; // Cambia esto para probar otras plateas
 
@@ -56,7 +59,12 @@ export class SeatsPage {
   blockTimes = 2 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
 
-  constructor(public navCtrl: NavController, public navParams: NavParams, public alertCtrl: AlertController) { }
+  constructor(
+    public navCtrl: NavController,
+    public navParams: NavParams,
+    public alertCtrl: AlertController,
+    private platform: Platform
+  ) { }
 
   getSession() {
     let sendId = sessionStorage.getItem('sendId');
@@ -74,16 +82,12 @@ export class SeatsPage {
       for (let i = 0; i < rowLayout.shiftLeft - 1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
-
-      if (rowLayout.active[0]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft -1});
-      if (rowLayout.active[2]==0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 + -1});
-
-      // Alternamos bloques de activos y deshabilitados
+      if (rowLayout.active[0] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft - 1 });
+      if (rowLayout.active[2] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 - 1 });
       rowLayout.active.forEach((activeSeats, i) => {
-        col += activeSeats+1;
-
+        col += activeSeats + 1;
         const gap = rowLayout.disabled[i] || 0;
-        for (let j = 0; j < gap-1; j++) {
+        for (let j = 0; j < gap - 1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
         }
       });
@@ -119,11 +123,9 @@ export class SeatsPage {
       const offset = col - rightStart;
       const labelNumber = 2 * offset + 1;
       return `${rowLetter}${labelNumber}`;
-    } else{
+    } else {
       return rowLetter
     }
-
-    // return '';
   }
 
   generateCentralBlockSeats(seatRows) {
@@ -141,6 +143,7 @@ export class SeatsPage {
     });
     return seats;
   }
+
   generateSideSeats(seatRows, count) {
     const seats = [];
     seatRows.forEach(row => {
@@ -158,6 +161,7 @@ export class SeatsPage {
     });
     return seats;
   }
+
   generateIndexSeats() {
     const indexSeats = [];
     layout.forEach((rowLayout, rowIndex) => {
@@ -203,7 +207,6 @@ export class SeatsPage {
           label: 'Platea C',
           price: 20,
           cssClass: 'plateaC',
-          // seatRows: [0, 1, 2, 3, 4, 5],
           seats: [
             ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
             ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
@@ -218,7 +221,7 @@ export class SeatsPage {
           seats: this.generateIndexSeats(),
         }
       },
-      reservedSeats: [], // solo temporal
+      reservedSeats: [],
       disabledSeats: [],
       seatLabel: (index) => {
         return this.seatLabelSeatsFromLayout(index);
@@ -282,56 +285,45 @@ export class SeatsPage {
     this.initSeatChart(this.seatContainer.nativeElement);
   }
 
-  // Esta es la clave: Si no tiene saldo suficiente, solo muestra alerta
- onSeatChange(selectedSeats: { row: number, col: number }[]) {
-  const miSesion = this.getSession();
-
-  // Solo mantiene los bloqueos de otros usuarios y los seleccionados de tu sesión
-  this.blockedSeats = this.blockedSeats.filter(blocked => {
-    // Si el asiento es tuyo y ya no está seleccionado, se elimina
-    if (blocked.sesionId === miSesion) {
-      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
-    }
-    // Si es de otra sesión, se mantiene si está vigente
-    return blocked.expires > Date.now();
-  });
-
-  // Agrega los nuevos bloqueos para los asientos seleccionados no bloqueados ni vendidos
-  selectedSeats.forEach(seat => {
-    const platea = this.getPlateaDeAsiento(seat.row, seat.col);
-    let precio = 30;
-    if (platea === 'A') precio = 40;
-    if (platea === 'C') precio = 20;
-
-    if (
-      (platea === 'A' && this.dineroDisponible < 40) ||
-      (platea === 'B' && this.dineroDisponible < 30) ||
-      (platea === 'C' && this.dineroDisponible < 20)
-    ) {
-      // No permitir selección por presupuesto (puedes mostrar alerta)
-      return;
-    }
-    const alreadyBlocked = this.blockedSeats.some(
-      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-    );
-    const alreadySold = this.soldSeats.some(
-      s => s.row === seat.row && s.col === seat.col
-    );
-    if (!alreadyBlocked && !alreadySold) {
-      this.blockedSeats.push({
-        row: seat.row,
-        col: seat.col,
-        expires: Date.now() + this.blockTimes,
-        sesionId: miSesion
-      });
-    }
-  });
-
-  this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
-  this.saveSeatsToStorage(); // <--- Aquí actualiza el localStorage
-}
-
-
+  onSeatChange(selectedSeats: { row: number, col: number }[]) {
+    const miSesion = this.getSession();
+    this.blockedSeats = this.blockedSeats.filter(blocked => {
+      if (blocked.sesionId === miSesion) {
+        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+      }
+      return blocked.expires > Date.now();
+    });
+    selectedSeats.forEach(seat => {
+      const platea = this.getPlateaDeAsiento(seat.row, seat.col);
+      let precio = 30;
+      if (platea === 'A') precio = 40;
+      if (platea === 'C') precio = 20;
+      if (
+        (platea === 'A' && this.dineroDisponible < 40) ||
+        (platea === 'B' && this.dineroDisponible < 30) ||
+        (platea === 'C' && this.dineroDisponible < 20)
+      ) {
+        // No permitir selección por presupuesto (puedes mostrar alerta)
+        return;
+      }
+      const alreadyBlocked = this.blockedSeats.some(
+        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+      );
+      const alreadySold = this.soldSeats.some(
+        s => s.row === seat.row && s.col === seat.col
+      );
+      if (!alreadyBlocked && !alreadySold) {
+        this.blockedSeats.push({
+          row: seat.row,
+          col: seat.col,
+          expires: Date.now() + this.blockTimes,
+          sesionId: miSesion
+        });
+      }
+    });
+    this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
+    this.saveSeatsToStorage();
+  }
 
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
@@ -343,52 +335,45 @@ export class SeatsPage {
     stageDiv.textContent = 'Escenario';
     mapContainer.appendChild(stageDiv);
   }
-private relocateCart(container: HTMLElement, sc: any) {
-  setTimeout(() => {
-    const cartContainer = document.getElementById('floatingCart');
-    if (!cartContainer) return;
-    const originalHeader = container.querySelector('.sc-cart-header');
-    const originalFooter = container.querySelector('.sc-cart-footer');
-    const originalContainer = container.querySelector('.sc-right-container');
-    if (originalHeader && originalFooter) {
-      const existingHeader = cartContainer.querySelector('.sc-cart-header');
-      const existingFooter = cartContainer.querySelector('.sc-cart-footer');
-      if (existingHeader) existingHeader.remove();
-      if (existingFooter) existingFooter.remove();
-      cartContainer.appendChild(originalHeader);
-      cartContainer.appendChild(originalFooter);
 
-      // Solo si existe el header, agregamos el contador
-      let countP = cartContainer.querySelector('.cart-count');
-      if (!countP) {
-        countP = document.createElement('p');
-        countP.classList.add('cart-count');
-        countP.textContent = `${sc.getCart().length} tickets`;
-        // Solo insertamos si existe originalHeader
-        if (originalHeader) {
-          originalHeader.insertBefore(countP, originalHeader.firstChild);
+  private relocateCart(container: HTMLElement, sc: any) {
+    setTimeout(() => {
+      const cartContainer = document.getElementById('floatingCart');
+      if (!cartContainer) return;
+      const originalHeader = container.querySelector('.sc-cart-header');
+      const originalFooter = container.querySelector('.sc-cart-footer');
+      const originalContainer = container.querySelector('.sc-right-container');
+      if (originalHeader && originalFooter) {
+        const existingHeader = cartContainer.querySelector('.sc-cart-header');
+        const existingFooter = cartContainer.querySelector('.sc-cart-footer');
+        if (existingHeader) existingHeader.remove();
+        if (existingFooter) existingFooter.remove();
+        cartContainer.appendChild(originalHeader);
+        cartContainer.appendChild(originalFooter);
+
+        let countP = cartContainer.querySelector('.cart-count');
+        if (!countP) {
+          countP = document.createElement('p');
+          countP.classList.add('cart-count');
+          countP.textContent = `${sc.getCart().length} tickets`;
+          if (originalHeader) {
+            originalHeader.insertBefore(countP, originalHeader.firstChild);
+          }
         }
       }
-    }
-    if (originalContainer) originalContainer.remove();
-    const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-    const scrollY = container.scrollHeight;
-    container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' }); //'auto'
-  }, 200); // Puede subir el delay si aún no existen los nodos (de 100 a 200 ms)
-}
-
+      if (originalContainer) originalContainer.remove();
+      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+      const scrollY = container.scrollHeight;
+      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'smooth' });
+    }, 200);
+  }
 
   private setupCartListener(sc: any) {
     sc.addEventListener('cartchange', () => {
-      // const total = sc.getCartTotal();
       const count = sc.getCart().length;
       const cart = sc.getCart();
-
-      // Obtener todos los labels de los asientos seleccionados
       const labels = cart.map(seat => seat.label).join(', ');
 
-     
-      // ALERTA si selecciona un asiento de platea no permitida
       let mensajeSaldo = '';
       cart.forEach((item: any) => {
         const row = item.index.row;
@@ -404,7 +389,7 @@ private relocateCart(container: HTMLElement, sc: any) {
       });
       if (mensajeSaldo) {
         alert(mensajeSaldo);
-        sc.clearCart(); // limpia selección
+        sc.clearCart();
         this.cart = [];
         return;
       }
@@ -413,9 +398,8 @@ private relocateCart(container: HTMLElement, sc: any) {
         col: item.index.col
       }));
       this.onSeatChange(this.cart);
-     
       const countP = document.querySelector('.cart-count');
-      if (countP)       countP.textContent = `${count} tickets: \n ${labels}`;
+      if (countP) countP.textContent = `${count} tickets: \n ${labels}`;
     });
   }
 
@@ -437,12 +421,8 @@ private relocateCart(container: HTMLElement, sc: any) {
         return { label, platea, qrText, qrImage };
       });
       const qrDataArray = await Promise.all(qrDataPromises);
-      // this.navCtrl.push('QrPage', { qrDataArray });
-
       this.reserveConfirm(qrDataArray);
-      // alert('Total: ' + e.total + '$');
-      this.navCtrl.push('QrPage', { qrDataArray });
-      alert('Total: ' + e.total + '$');
+      
     });
   }
 
@@ -454,10 +434,8 @@ private relocateCart(container: HTMLElement, sc: any) {
     this.setupSubmitHandler(this.sc);
   }
 
-  allowedPlatea (){
-    // Base de asientos deshabilitados según layout (pasillos, espacios)
+  allowedPlatea() {
     const baseDisabledSeats = this.generateDisabledSeatsFromLayout();
-    // Definición de asientos por platea
     const plateaSeats = {
       'Platea A': this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
       'Platea C': [
@@ -468,50 +446,34 @@ private relocateCart(container: HTMLElement, sc: any) {
       ],
       'Platea B': []
     };
-
-      // Completar Platea B con asientos que no están en A ni en C ni están deshabilitados
     for (let row = 0; row < this.options.map.rows; row++) {
       for (let col = 0; col < this.options.map.columns; col++) {
         const index = { row, col };
-
-        // Si está deshabilitado por layout, ignoramos
         let isDisabledByLayout = baseDisabledSeats.some(d => d.row === row && d.col === col);
         if (isDisabledByLayout) continue;
-
-        // Si no está en A ni C, pertenece a B
         const inA = plateaSeats['Platea A'].some(s => s.row === row && s.col === col);
         const inC = plateaSeats['Platea C'].some(s => s.row === row && s.col === col);
-
         if (!inA && !inC) {
           plateaSeats['Platea B'].push(index);
         }
       }
     }
-
-    // Asignar plateas permitidas según dinero disponible
     const allowedPlatea = [];
     if (this.dineroDisponible >= 20) allowedPlatea.push('Platea C');
     if (this.dineroDisponible >= 30) allowedPlatea.push('Platea B');
     if (this.dineroDisponible >= 40) allowedPlatea.push('Platea A');
-
-    // Construir lista final de asientos deshabilitados (layout) y reservados (por presupuesto)
-    const finalDisabledSeats = baseDisabledSeats.slice();  // layout deshabilitados
+    const finalDisabledSeats = baseDisabledSeats.slice();
     const reservedSeats = [];
-
     for (const platea in plateaSeats) {
       if (allowedPlatea.indexOf(platea) === -1) {
-        // Asientos bloqueados por falta de presupuesto van a reservedSeats para que se vean bloqueados, no desaparezcan
         reservedSeats.push(...plateaSeats[platea]);
       }
     }
-
-    // Actualizar la configuración de opciones
     this.options.map.disabledSeats = finalDisabledSeats;
     this.options.map.reservedSeats = reservedSeats;
   }
 
   reserveConfirm(qrDataArray) {
-    console.log(qrDataArray)
     const alert = this.alertCtrl.create({
       title: 'Confirmar reserva',
       message: '¿Deseas reservar estos asientos?',
@@ -520,15 +482,13 @@ private relocateCart(container: HTMLElement, sc: any) {
           text: 'Cancelar',
           role: 'cancel',
           handler: () => {
-            console.log('Envío cancelado');
+            // Cancel
           }
         },
         {
           text: 'Enviar',
           handler: () => {
-            // Lógica de envío
             this.navCtrl.push('QrPage', { qrDataArray });
-            console.log('Formulario enviado');
           }
         }
       ]
@@ -544,32 +504,42 @@ private relocateCart(container: HTMLElement, sc: any) {
     });
   }
 
-  ionViewDidEnter() {
-    const container = this.seatContainer.nativeElement;
-    this.initSeatChart(container);
-    // this.allowedPlatea();     // TODO: Revisar porque se ejecuta despues de haber hecho submit y porque deshabilita los indices
+  zoomLevel = 1;
 
-    // Estado inicial
-    //   const cart = sc.getCart().length;    //Obtiene la info del carrito
-    //   console.log('Total a pagar:', sc.getCartTotal());
-    //   console.log('Asientos seleccionados:', cart);
-    //   // const seat = sc.getSeat({0,5});    //Obtiene la info del carrito
-    //   // const clear = sc.clearCart(); //Limpia el carrito
-
-    //   // console.log(sc.store.getOptions())
-    //   // console.log('Seat:', seat);
-
- 
-  //     const cart2 = customCartContainer.querySelector('.sc-right-container');
-  //     if (cart2) {
-  //       cart2.remove();
-  //     }
-
-  //   // sc.addEventListener('submit', function handleSubmit(e) {
-  //   //     alert('Total: ' + e.total + '$');
-  //   // });
-     this.refreshMap();
+  zoomIn() {
+    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
+    this.applyZoom();
   }
-   
+
+  zoomOut() {
+    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
+    this.applyZoom();
+  }
+
+  applyZoom() {
+    const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
+    if (mapInner) {
+      mapInner.style.transform = `scale(${this.zoomLevel})`;
+      mapInner.style.transformOrigin = 'center center';
+    }
+  }
+
+  ionViewDidEnter() {
+    this.platform.ready().then(() => {
+      requestAnimationFrame(() => {
+        const container = this.seatContainer.nativeElement;
+         const seatChart = this.initSeatChart(container); // retorna el chart
+        this.allowedPlatea();
+
+        this.loading = false; //  ocultar skeleton
+
+        // ahora que todo es visible, mueve el carrito
+        this.relocateCart(container, seatChart);
+
+        this.initSeatChart(container);
+        this.allowedPlatea();
+        this.refreshMap();
+      });
+    });
+  }
 }
- 

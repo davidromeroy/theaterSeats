@@ -2,10 +2,6 @@
 
 page-seats {
 
-  .budget-label{
-
-  }
-  
   // 🎨 LEYENDA PRINCIPAL (Plateas)
   .legend-card {
     background: #ffffff;
@@ -29,6 +25,7 @@ page-seats {
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
+      flex: 1;
     }
 
     .legend-item {
@@ -55,6 +52,8 @@ page-seats {
     display: flex;
     justify-content: center;
     margin: 1rem 1rem;
+    flex-direction: column;
+    align-items: center;
 
     .legend-list {
       list-style: none;
@@ -84,9 +83,12 @@ page-seats {
   }
 
   // 🛒 BOTÓN DEL CARRITO
-  .sc-cart-btn-submit, .sc-cart-btn-delete  {
+  .sc-cart-btn-submit,
+  .sc-cart-btn-delete {
     background-color: #95013d;
-    &:hover, &:active{
+
+    &:hover,
+    &:active {
       background-color: #b21853;
     }
   }
@@ -130,7 +132,7 @@ page-seats {
     height: 40vh;
     padding: 0%;
   }
-  
+
   .sc-map {
     display: flex;
     flex-direction: row;
@@ -139,16 +141,128 @@ page-seats {
 
   // 🔳 Indexador (fila)
   .sc-indexer {
-    flex-shrink: 0;           // Evita que se achique
+    flex-shrink: 0; // Evita que se achique
     margin-bottom: 50px;
   }
+
   // 🔳 Mapa de asientos
   .sc-map-inner-container {
     flex-shrink: 0;
-  }  
+  }
+
+  // Botenes Zoom 
+  .zoom-controls {
+    position: relative;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 1000;
+    margin-top: 10px;
+
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
+
+  // Estilos de skeleton hasta cargar la vista
+  .skeleton-wrapper {
+    .skeleton {
+      background: linear-gradient(90deg, #e0e0e0 25%, #cfcfcf 50%, #e0e0e0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      //margin-bottom: 16px;
+      margin-top: 16px;
+      //margin-left: 16px;
+    }
+  }
+
+  .skeleton-title {
+    width: 40%;
+    height: 20px;
+    border-radius: 15px;
+  }
+
+  .skeleton-subtitle {
+    width: 100%;
+    height: 80px;
+  }
+
+  .skeleton-banner {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 350px;
+  }
+
+  .skeleton-chip {
+    width: 20%;
+    height: 22px;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 20px;
+
+    &.small {
+      width: 15%;
+    }
+  }
+
+  .skeleton-line {
+    height: 25px;
+    width: 45%;
+
+    &.short {
+      width: 28%;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+
+  .skeleton-button {
+    width: 30%;
+    height: 50px;
+    margin-left: auto;
+  }
+
+  .skeleton-column {
+    //display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .skeleton-row-1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .skeleton-row-2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
 
   .sc-indexer .sc-seat-indexer {
-    height: 32px !important;          // ⬅️ Misma altura que .sc-seat
+    height: 32px !important; // ⬅️ Misma altura que .sc-seat
     font-size: 1.1rem !important;
     font-weight: bold;
   }
@@ -172,9 +286,10 @@ page-seats {
       transform: scale(0.9);
     }
   }
+
   .sc-seat.sc-seat-disabled {
-      min-width: 14px !important;      
-      width: 14px !important;
+    min-width: 14px !important;
+    width: 14px !important;
   }
   .sc-seat.sc-seat-reserved {
   background: #ff9800 !important;   // naranja o el color que prefieras
@@ -188,7 +303,7 @@ page-seats {
   .sc-seat.sc-seat-selected {
     cursor: pointer;
     background-color: #95013d;
-    color: white; 
+    color: white;
     opacity: 1;
   }
 
@@ -202,7 +317,7 @@ page-seats {
   // 🎫 PLATEAS (A, B, C)
   .plateaA {
     background-color: rgb(255, 255, 0); //#f9c74f
-    color: black; 
+    color: black;
   }
 
   .plateaB {
@@ -213,18 +328,19 @@ page-seats {
 
   .plateaC {
     background-color: rgb(255, 0, 255); //#f94144
-    color: black;;
+    color: black;
+    ;
     // border-radius: 4px;
   }
 
   .index {
-    pointer-events: none;            // ❌ No se puede hacer clic
-    cursor: default;                // 👉 Cursor normal 
+    pointer-events: none; // ❌ No se puede hacer clic
+    cursor: default; // 👉 Cursor normal 
     background-color: transparent;
     color: #95013d;
     font-size: 1.5rem !important;
-    font-weight:bold;
-    opacity: 1 !important; 
+    font-weight: bold;
+    opacity: 1 !important;
   }
 
   // 🛒 CARRITO FLOTANTE
@@ -243,19 +359,28 @@ page-seats {
     // z-index: 10;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 
-    .sc-cart-header{
+    .sc-cart-header {
       align-items: normal;
       width: 250px;
       height: max-content;
       gap: 1.2rem;
-      .cart-count{ margin: 0; font-weight: bold; font-size: 1.4rem; }
-      .sc-cart-title { display: none }
+
+      .cart-count {
+        margin: 0;
+        font-weight: bold;
+        font-size: 1.4rem;
+      }
+
+      .sc-cart-title {
+        display: none
+      }
     }
-    .sc-cart-footer{
+
+    .sc-cart-footer {
       width: 100%;
       height: max-content;
     }
-    
+
   }
 
   // 📱 MEDIAS RESPONSIVAS
@@ -263,6 +388,7 @@ page-seats {
     .sc-map {
       // transform: scale(0.6);
     }
+
     // .sc-main-container {
     //   transform: scale(0.6);
     // }

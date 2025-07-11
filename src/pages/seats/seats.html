@@ -10,49 +10,73 @@
   </ion-navbar>
 </ion-header>
 
-<!-- <ion-content padding scroll="false"> -->
-<ion-content padding scroll="true">
-  <!--Dinero disponible del usuario -->
-  <div class="budget-label">
-    <p><strong>Puntos disponible:</strong> ${{ dineroDisponible }}</p>
+<ion-content padding>
+  <!-- Skeleton Loader -->
+  <div *ngIf="loading" class="skeleton-wrapper">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-subtitle"></div>
+    <div class="skeleton skeleton-banner"></div>
+    <div class="skeleton-row-1">
+      <div class="skeleton skeleton-chip"></div>
+      <div class="skeleton skeleton-chip"></div>
+    </div>
+    <div class="skeleton-row-2">
+      <div class="skeleton-column">
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line short"></div>
+      </div>
+      <div class="skeleton skeleton-button"></div>
+    </div>
+
   </div>
-  
-  <!-- Leyenda de Plateas -->
-  <div class="legend-card">
-    <h3 class="legend-title">Plateas</h3>
-    <ul class="legend-list">
-      <li class="legend-item">
-        <div class="legend-bullet plateaA"></div>
-        <p class="legend-description">Platea A ($40)</p>
-      </li>
-      <li class="legend-item">
-        <div class="legend-bullet plateaB"></div>
-        <p class="legend-description">Platea B ($30)</p>
-      </li>
-      <li class="legend-item">
-        <div class="legend-bullet plateaC"></div>
-        <p class="legend-description">Platea C ($20)</p>
-      </li>
-        <button (click)="goToQr()">Ver entradas</button>
-    </ul>
-  </div>
-  
-  <!-- Mapa y carrito -->
-  <div id="seatWrapper">
-    <div #seatContainer></div>
-    <div class="legend-footer">
+  <div [hidden]="loading">
+    <!--Dinero disponible del usuario -->
+    <div class="budget-label">
+      <p><strong>Puntos disponible:</strong> ${{ dineroDisponible }}</p>
+    </div>
+    <!-- Leyenda de Plateas -->
+    <div class="legend-card">
+      <h3 class="legend-title">Plateas</h3>
       <ul class="legend-list">
         <li class="legend-item">
-          <div class="legend-bullet sc-seat-reserved"></div>
-          <p class="legend-description">Ocupado</p>
+          <div class="legend-bullet plateaA"></div>
+          <p class="legend-description">Platea A ($40)</p>
         </li>
         <li class="legend-item">
-          <div class="legend-bullet sc-seat sc-seat-selected"></div>
-          <p class="legend-description">Su Asiento</p>
+          <div class="legend-bullet plateaB"></div>
+          <p class="legend-description">Platea B ($30)</p>
         </li>
+        <li class="legend-item">
+          <div class="legend-bullet plateaC"></div>
+          <p class="legend-description">Platea C ($20)</p>
+        </li>
+        <button (click)="goToQr()">Ver entradas</button>
       </ul>
     </div>
-    <div id="floatingCart"></div> <!-- Contenedor para el carrito -->
+    <!-- Mapa y carrito -->
+    <div id="seatWrapper">
+      <div #seatContainer>
+      </div>
+
+      <div class="legend-footer">
+        <!-- Controles del zoom -->
+        <div class="zoom-controls">
+          <button (click)="zoomOut()">−</button>
+          <button (click)="zoomIn()">+</button>
+        </div>
+        <ul class="legend-list">
+          <li class="legend-item">
+            <div class="legend-bullet sc-seat-reserved"></div>
+            <p class="legend-description">Ocupado</p>
+          </li>
+          <li class="legend-item">
+            <div class="legend-bullet sc-seat sc-seat-selected"></div>
+            <p class="legend-description">Su Asiento</p>
+          </li>
+        </ul>
+      </div>
+      <div id="floatingCart"></div> <!-- Contenedor para el carrito -->
+    </div>
   </div>
 
 </ion-content>
