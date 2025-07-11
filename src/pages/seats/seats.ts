@@ -3,6 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 
+
 declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
@@ -51,7 +52,12 @@ export class SeatsPage {
   loading = true;
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
-  userAmount = 60; // Cambia esto para probar otras plateas
+  
+   userAmount = 50;
+
+  initialUserAmount: number; // Valor original del usuario para cálculos internos
+
+  // isReservado: boolean = false;// Nuevo
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
@@ -66,6 +72,8 @@ export class SeatsPage {
     private platform: Platform
   ) { }
 
+
+
   getSession() {
     let sendId = sessionStorage.getItem('sendId');
     if (!sendId) {
@@ -78,24 +86,31 @@ export class SeatsPage {
   // Funciones para general los asientos desde el Layout
   generateDisabledSeatsFromLayout() {
     const disabled = [];
+
     layout.forEach((rowLayout, rowIndex) => {
       let col = 0;
+
       for (let i = 0; i < rowLayout.shiftLeft - 1; i++) {
         disabled.push({ row: rowIndex, col: col++ });
       }
+
       if (rowLayout.active[0] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft - 1 });
       if (rowLayout.active[2] == 0) disabled.push({ row: rowIndex, col: rowLayout.shiftLeft + rowLayout.active[1] + 8 - 1 });
       rowLayout.active.forEach((activeSeats, i) => {
         col += activeSeats + 1;
+
         const gap = rowLayout.disabled[i] || 0;
         for (let j = 0; j < gap - 1; j++) {
           disabled.push({ row: rowIndex, col: col++ });
         }
       });
+
+
       while (col < columns) {
         disabled.push({ row: rowIndex, col: col++ });
       }
     });
+
     return disabled;
   }
 
@@ -103,16 +118,22 @@ export class SeatsPage {
     const rowLetter = seatLetters[seatLetters.length - 1 - index.row];
     const layoutRow = layout[index.row];
     if (!layoutRow) return '';
+
     const [leftBlock, centerBlock, rightBlock] = layoutRow.active;
     const [gap1, gap2] = layoutRow.disabled;
     const shift = layoutRow.shiftLeft;
+
     const col = index.col;
+
     const leftStart = shift;
     const leftEnd = leftStart + leftBlock - 1;
+
     const centerStart = leftEnd + 1 + gap1;
     const centerEnd = centerStart + centerBlock - 1;
+
     const rightStart = centerEnd + 1 + gap2;
     const rightEnd = rightStart + rightBlock - 1;
+
     if (col >= leftStart && col <= leftEnd) {
       const offset = col - leftStart;
       const labelNumber = 2 * (leftBlock - offset);
@@ -127,6 +148,8 @@ export class SeatsPage {
     } else {
       return rowLetter
     }
+
+    
   }
 
   generateCentralBlockSeats(seatRows) {
@@ -137,11 +160,13 @@ export class SeatsPage {
       const left = rowLayout.active[0];
       const pasillo = rowLayout.disabled[0];
       const center = rowLayout.active[1];
+
       for (let i = 0; i < center; i++) {
         const col = shift + left + pasillo + i;
         seats.push({ row, col });
       }
     });
+
     return seats;
   }
 
@@ -151,30 +176,38 @@ export class SeatsPage {
       const rowLayout = layout[row];
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
+
       for (let i = 0; i < Math.min(count, leftCount); i++) {
         const col = shift + i;
         seats.push({ row, col });
       }
+
       for (let i = 0; i < Math.min(count, rightCount); i++) {
         const col = shift + leftCount + 8 + centerCount + (rightCount - count) + i;
         seats.push({ row, col });
       }
     });
+
     return seats;
   }
 
   generateIndexSeats() {
     const indexSeats = [];
+
     layout.forEach((rowLayout, rowIndex) => {
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
+
       const colIndex = shift - 1;
       indexSeats.push({ row: rowIndex, col: colIndex });
+      
       const colIndex2 = shift + leftCount + 4 - 1;
       indexSeats.push({ row: rowIndex, col: colIndex2 });
+
       const colIndex3 = shift + leftCount + 4 + centerCount + 4 - 1;
       indexSeats.push({ row: rowIndex, col: colIndex3 });
     });
+
     return indexSeats;
   }
 
@@ -193,6 +226,7 @@ export class SeatsPage {
   }
 
   options = {
+
     map: {
       rows,
       columns,
@@ -200,18 +234,18 @@ export class SeatsPage {
         default: {
           label: 'Platea B',
           price: 30,
-          cssClass: 'plomo'
+          cssClass: 'bloqueado'
         },
         plateaA: {
           label: 'Platea A',
           price: 40,
-          cssClass: 'plomo',
+          cssClass: 'bloqueado',
           seats: this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
         },
         plateaC: {
           label: 'Platea C',
           price: 20,
-          cssClass: 'plomo',
+          cssClass: 'bloqueado',
           // seatRows: [0, 1, 2, 3, 4, 5],
           seats: [
             ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
@@ -349,11 +383,13 @@ export class SeatsPage {
 
 
 
+
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
     if (!outer) return;
     const mapContainer = outer.querySelector('.sc-map-inner-container');
     if (!mapContainer) return;
+
     const stageDiv = document.createElement('div');
     stageDiv.className = 'stage';
     stageDiv.textContent = 'Escenario';
@@ -415,7 +451,7 @@ export class SeatsPage {
 
 
 
-  //Nuevo: Metodo para calcular el precio del asiento
+  //Nuevos metodos: Metodo para calcular el precio del asiento
   private getSeatPrice(seat: any): number {
     const row = seat.index.row;
     const col = seat.index.col;
@@ -427,9 +463,29 @@ export class SeatsPage {
     return 0;
   }
 
+    //Metodo Nuevo para asignar los colores a las plateas de acurdo a la cantidad de puntos disponibles
+  private updateSeatColorsByUserAmount(amount: number): void {
+    const plateas = this.options.map.seatTypes;
+    plateas.plateaA.cssClass = amount >= 40 ? 'plateaA' : 'bloqueado';
+    plateas.default.cssClass = amount >= 30 ? 'plateaB' : 'bloqueado';
+    plateas.plateaC.cssClass = amount >= 20 ? 'plateaC' : 'bloqueado';
+  }
+
+  //Nuevo: Recalcular saldo disponible al modificar el carrito
+  private actualizarEstadoUsuario(): void {
+    const cart = this.sc.getCart(); // Asientos seleccionados
+    const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
+    const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
+
+    this.userAmount = saldoRestante;
+    this.updateSeatColorsByUserAmount(saldoRestante); // Esta línea ya es suficiente
+  }
+
   private setupCartListener(sc: any) {
   sc.addEventListener('cartchange', () => {
+    
     const cart = sc.getCart();
+    this.actualizarEstadoUsuario(); // Actualiza todo al cambiar selección
 
     // Valida saldo antes de guardar nada
     let mensajeSaldo = '';
@@ -472,6 +528,20 @@ export class SeatsPage {
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
       const cart = sc.getCart();
+
+      // Valida si el usuario tiene puntos suficientes
+      const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
+      if (totalGastado > this.initialUserAmount) {
+        const alertaError = this.alertCtrl.create({
+          title: 'Saldo insuficiente',
+          message: 'No tienes puntos suficientes para completar la compra. Ajusta tu selección.',
+          buttons: [{ text: 'Aceptar' }]
+        });
+        alertaError.present();
+        return;
+      }
+
+
       if (!cart || cart.length === 0) {
         alert('No hay asientos seleccionados.');
         return;
@@ -486,13 +556,18 @@ export class SeatsPage {
         const qrImage = await QRCode.toDataURL(qrText);
         return { label, platea, qrText, qrImage };
       });
+
       const qrDataArray = await Promise.all(qrDataPromises);
+
       this.reserveConfirm(qrDataArray);
       
     });
+
   }
 
+
   reserveConfirm(qrDataArray) {
+
     const alert = this.alertCtrl.create({
       title: 'Confirmar reserva',
       message: '¿Deseas reservar estos asientos?',
@@ -507,12 +582,15 @@ export class SeatsPage {
         {
           text: 'Enviar',
           handler: () => {
+
             this.navCtrl.push('QrPage', { qrDataArray });
+
           }
         }
       ]
     });
     alert.present();
+
   }
 
   ionViewDidLoad() {
@@ -538,31 +616,7 @@ export class SeatsPage {
     // 4. Configura la lógica de submit
     this.setupSubmitHandler(this.sc);
     return this.sc;
-  }
 
-  //Metodo Nuevo para asignar los colores a las plateas de acurdo a la cantidad de puntos disponibles
-  private updateSeatColorsByUserAmount(amount: number): void {
-    // Tiene suficiente para todas las plateas
-    if (amount >= 40) {
-      this.options.map.seatTypes.plateaA.cssClass = 'plateaA';
-      this.options.map.seatTypes.default.cssClass = 'plateaB';
-      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
-      //  Puede pagar Platea B y Platea C
-    } else if (amount >= 30) {
-      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
-      this.options.map.seatTypes.default.cssClass = 'plateaB';
-      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
-      //  Solo puede pagar Platea C
-    } else if (amount >= 20) {
-      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
-      this.options.map.seatTypes.default.cssClass = 'plomo';
-      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
-      //  No tiene suficiente para ninguna platea
-    } else {
-      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
-      this.options.map.seatTypes.default.cssClass = 'plomo';
-      this.options.map.seatTypes.plateaC.cssClass = 'plomo';
-    }
   }
   
   zoomIn() {
@@ -586,10 +640,15 @@ export class SeatsPage {
   }
 
   ionViewDidEnter() {
+
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
 
+      // Asigna saldo inicial dinámicamente
+        this.initialUserAmount = this.userAmount; //Nuevo
+
         this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
+        
         const container = this.seatContainer.nativeElement;
         this.initSeatChart(container); // retorna el chart
 
@@ -598,4 +657,5 @@ export class SeatsPage {
     });
 
   }
+
 }
