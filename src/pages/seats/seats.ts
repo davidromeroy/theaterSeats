@@ -449,6 +449,8 @@ export class SeatsPage {
   });
 }
 
+
+
   //Nuevos metodos: Metodo para calcular el precio del asiento
   private getSeatPrice(seat: any): number {
     const row = seat.index.row;
