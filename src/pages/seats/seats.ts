@@ -52,7 +52,7 @@ export class SeatsPage {
   loading = true;
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
-  dineroDisponible = 30;
+  userAmount = 30;
 
   constructor(public alertCtrl: AlertController,
     public navCtrl: NavController,
@@ -202,18 +202,18 @@ export class SeatsPage {
         default: {
           label: 'Platea B',
           price: 30,
-          cssClass: 'plateaB'
+          cssClass: 'plomo'
         },
         plateaA: {
           label: 'Platea A',
           price: 40,
-          cssClass: 'plateaA',
+          cssClass: 'plomo',
           seats: this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
         },
         plateaC: {
           label: 'Platea C',
           price: 20,
-          cssClass: 'plateaC',
+          cssClass: 'plomo',
           // seatRows: [0, 1, 2, 3, 4, 5],
           seats: [
             ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
@@ -373,17 +373,33 @@ export class SeatsPage {
     });
   }
 
+  //Nuevo: Metodo para calcular el precio del asiento
+  private getSeatPrice(seat: any): number {
+    const row = seat.index.row;
+    const col = seat.index.col;
+    const platea = this.getPlateaForSeat(row, col);
+
+    if (platea === 'Platea A') return 40;
+    if (platea === 'Platea B') return 30;
+    if (platea === 'Platea C') return 20;
+    return 0;
+  }
+
   private setupCartListener(sc: any) {
     sc.addEventListener('cartchange', () => {
-      // const total = sc.getCartTotal();
-      const count = sc.getCart().length;
-      const cart = sc.getCart();
 
-      // Obtener todos los labels de los asientos seleccionados
+      const cart = sc.getCart();
+      const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
+      const saldoRestante = this.userAmount - totalGastado;
+
+      // Actualizar plateas disponibles según saldo restante
+      this.updateSeatColorsByUserAmount(saldoRestante);
+
+      
       const labels = cart.map(seat => seat.label).join(', ');
 
       const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `${count} tickets: \n ${labels}`;
+      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
   }
 
@@ -427,63 +443,7 @@ export class SeatsPage {
     this.setupSubmitHandler(this.sc);
     return this.sc;
   }
-
-  allowedPlatea() {
-    // Base de asientos deshabilitados según layout (pasillos, espacios)
-    const baseDisabledSeats = this.generateDisabledSeatsFromLayout();
-    // Definición de asientos por platea
-    const plateaSeats = {
-      'Platea A': this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
-      'Platea C': [
-        ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
-        ...this.generateSideSeats([14], 5),
-        ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
-        ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])
-      ],
-      'Platea B': []
-    };
-
-    // Completar Platea B con asientos que no están en A ni en C ni están deshabilitados
-    for (let row = 0; row < this.options.map.rows; row++) {
-      for (let col = 0; col < this.options.map.columns; col++) {
-        const index = { row, col };
-
-        // Si está deshabilitado por layout, ignoramos
-        let isDisabledByLayout = baseDisabledSeats.some(d => d.row === row && d.col === col);
-        if (isDisabledByLayout) continue;
-
-        // Si no está en A ni C, pertenece a B
-        const inA = plateaSeats['Platea A'].some(s => s.row === row && s.col === col);
-        const inC = plateaSeats['Platea C'].some(s => s.row === row && s.col === col);
-
-        if (!inA && !inC) {
-          plateaSeats['Platea B'].push(index);
-        }
-      }
-    }
-
-    // Asignar plateas permitidas según dinero disponible
-    const allowedPlatea = [];
-    if (this.dineroDisponible >= 20) allowedPlatea.push('Platea C');
-    if (this.dineroDisponible >= 30) allowedPlatea.push('Platea B');
-    if (this.dineroDisponible >= 40) allowedPlatea.push('Platea A');
-
-    // Construir lista final de asientos deshabilitados (layout) y reservados (por presupuesto)
-    const finalDisabledSeats = baseDisabledSeats.slice();  // layout deshabilitados
-    const reservedSeats = [];
-
-    for (const platea in plateaSeats) {
-      if (allowedPlatea.indexOf(platea) === -1) {
-        // Asientos bloqueados por falta de presupuesto van a reservedSeats para que se vean bloqueados, no desaparezcan
-        reservedSeats.push(...plateaSeats[platea]);
-      }
-    }
-
-    // Actualizar la configuración de opciones
-    this.options.map.disabledSeats = finalDisabledSeats;
-    this.options.map.reservedSeats = reservedSeats;
-  }
-
+  
   reserveConfirm(qrDataArray) {
     console.log(qrDataArray)
     const alert = this.alertCtrl.create({
@@ -538,10 +498,13 @@ export class SeatsPage {
 
     this.platform.ready().then(() => {
       requestAnimationFrame(() => {
+
+        this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
+
         const container = this.seatContainer.nativeElement;
 
         const seatChart = this.initSeatChart(container); // retorna el chart
-        this.allowedPlatea();
+
 
         this.loading = false; //  ocultar skeleton
 
@@ -550,5 +513,30 @@ export class SeatsPage {
       });
     });
 
+  }
+
+  //Metodo Nuevo para asignar los colores a las plateas de acurdo a la cantidad de puntos disponibles
+  private updateSeatColorsByUserAmount(amount: number): void {
+    // Tiene suficiente para todas las plateas
+    if (amount >= 40) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plateaA';
+      this.options.map.seatTypes.default.cssClass = 'plateaB';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  Puede pagar Platea B y Platea C
+    } else if (amount >= 30) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plateaB';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  Solo puede pagar Platea C
+    } else if (amount >= 20) {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plomo';
+      this.options.map.seatTypes.plateaC.cssClass = 'plateaC';
+      //  No tiene suficiente para ninguna platea
+    } else {
+      this.options.map.seatTypes.plateaA.cssClass = 'plomo';
+      this.options.map.seatTypes.default.cssClass = 'plomo';
+      this.options.map.seatTypes.plateaC.cssClass = 'plomo';
+    }
   }
 }

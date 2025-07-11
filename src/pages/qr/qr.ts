@@ -1,7 +1,7 @@
-import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
+
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { HomePage } from '../home/home';
+
 
 /**
  * Generated class for the QrPage page.
@@ -34,8 +34,7 @@ export class QrPage {
   goToHome() {
     this.navCtrl.pop;
   }
-  // ionViewDidLoad() {
-  //   console.log('ionViewDidLoad QrPage');
-  // }
 
+  
 }
+
