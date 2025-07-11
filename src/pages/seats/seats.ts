@@ -478,10 +478,10 @@ export class SeatsPage {
     const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
 
     this.userAmount = saldoRestante;
-    this.updateSeatColorsByUserAmount(saldoRestante); // Esta línea ya es suficiente
+    this.updateSeatColorsByUserAmount(saldoRestante); 
   }
 
-  private setupCartListener(sc: any) {
+  /*private setupCartListener(sc: any) {
   sc.addEventListener('cartchange', () => {
     
     const cart = sc.getCart();
@@ -522,8 +522,61 @@ export class SeatsPage {
     const countP = document.querySelector('.cart-count');
     if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
   });
-}
+}*/
 
+  private setupCartListener(sc: any) {
+    sc.addEventListener('cartchange', () => {
+      const cart = sc.getCart();
+
+      // Actualiza estado (saldo restante y colores)
+      this.actualizarEstadoUsuario();
+
+      // Lógica unificada: acumulativa + validación por platea + mensaje claro
+      let saldoTemp = this.initialUserAmount;
+      let mensajeSaldo = '';
+      let detallesInvalidos: string[] = [];
+
+      for (const item of cart) {
+        const row = item.index.row;
+        const col = item.index.col;
+        const platea = this.getPlateaDeAsiento(row, col);
+        const precio = this.getSeatPrice({ index: { row, col } });
+
+        if (saldoTemp >= precio) {
+          saldoTemp -= precio; // Pasa, descuenta del saldo temporal
+        } else {
+          // No alcanza saldo, guarda mensaje con detalles
+          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
+        }
+      }
+
+      // Si hay errores y hay más de un asiento seleccionado
+      if (detallesInvalidos.length > 0 && cart.length > 1) {
+        mensajeSaldo = `No tienes puntos suficiente para reservar más de un asiento`;
+      }
+
+      if (mensajeSaldo) {
+        alert(mensajeSaldo);
+        sc.clearCart();
+        this.cart = [];
+        return;
+      }
+
+      // Actualiza el carrito en memoria y en storage
+      this.cart = cart.map((item: any) => ({
+        row: item.index.row,
+        col: item.index.col
+      }));
+
+      // Actualiza bloqueos
+      this.onSeatChange(this.cart);
+
+      // Actualiza contador visual
+      const labels = cart.map(seat => seat.label).join(', ');
+      const countP = document.querySelector('.cart-count');
+      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+    });
+  }
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
