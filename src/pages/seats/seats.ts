@@ -50,7 +50,9 @@ const layout = [
 export class SeatsPage {
   private sc: any;
   loading = true;
-
+  timer: any = null;
+  timeLeft:number;
+  timerActivo:boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
   
    userAmount = 50;
@@ -61,7 +63,7 @@ export class SeatsPage {
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
-  blockTimes = 1 * 60 * 1000; // 2 minutos
+ 
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
 
@@ -283,14 +285,45 @@ export class SeatsPage {
     this.soldSeats = JSON.parse(localStorage.getItem('soldSeats') || '[]');
     this.refreshMap();
   }
-  clearExpiredBlocks() {
-    const before = this.blockedSeats.length;
-    this.blockedSeats = this.blockedSeats.filter(b => b.expires > Date.now());
-    if (this.blockedSeats.length !== before) {
-      this.saveSeatsToStorage();
-      this.refreshMap();
-    }
+actualizarEstadoUsuarioPorBloqueos() {
+  // 1. Encuentra todos los asientos bloqueados para ESTA sesión y aún vigentes
+  const miSesion = this.getSession();
+  const cartBloqueados = this.blockedSeats
+    .filter(function(b) {
+      return b.sesionId === miSesion && b.expires > Date.now();
+    })
+    .map(function(b) {
+      return { row: b.row, col: b.col };
+    });
+
+  // 2. Recalcula el saldo basado en los asientos aún vigentes
+  const totalGastado = cartBloqueados.reduce((sum, seat) => sum + this.getSeatPrice({ index: seat }), 0);
+  const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
+  this.userAmount = saldoRestante;
+
+  // 3. Actualiza colores y mapa visual
+  this.updateSeatColorsByUserAmount(this.userAmount);
+ 
+  (this.options.map as any).selectedSeats = cartBloqueados;
+  // 4. IMPORTANTE: Actualiza el cart visual sólo con los vigentes
+  this.cart = cartBloqueados;
+  this.refreshMap();
+}
+
+
+clearExpiredBlocks() {
+  const before = this.blockedSeats.length;
+  this.blockedSeats = this.blockedSeats.filter(function(b) {
+    return b.expires > Date.now();
+  });
+  if (this.blockedSeats.length !== before) {
+    this.saveSeatsToStorage();
+    // Llama a la función para actualizar saldo, colores y refrescar el mapa
+    this.actualizarEstadoUsuarioPorBloqueos();
   }
+}
+
+
   isblocked(row: number, col: number): boolean {
     const miSesion = this.getSession();
     return this.blockedSeats.some(
@@ -328,14 +361,20 @@ export class SeatsPage {
       ...this.generateDisabledSeatsFromLayout(),
       ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
     ];
+    
   }
+  
   // Solo reserved seats: temporalmente bloqueados por otra sesión
-  getReservedSeats() {
-    const miSesion = this.getSession();
-    return this.blockedSeats
-      .filter(b => b.expires > Date.now() && b.sesionId !== miSesion)
-      .map(b => ({ row: b.row, col: b.col }));
-  }
+ getReservedSeats() {
+  const miSesion = this.getSession();
+  // Asientos bloqueados por otros
+  const reservados = this.blockedSeats
+    .filter(b => b.expires > Date.now() && b.sesionId !== miSesion)
+    .map(b => ({ row: b.row, col: b.col }));
+  // + Asientos vendidos (de todos)
+  const ocupados = this.soldSeats.map(s => ({ row: s.row, col: s.col }));
+  return [...reservados, ...ocupados];
+}
 
   refreshMap() {
     if (!this.seatContainer) return;
@@ -368,7 +407,7 @@ export class SeatsPage {
       this.blockedSeats.push({
         row: seat.row,
         col: seat.col,
-        expires: Date.now() + this.blockTimes,
+        expires: Date.now() + this.timeLeft *1000,
         sesionId: miSesion
       });
     }
@@ -523,11 +562,62 @@ export class SeatsPage {
     if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
   });
 }*/
+  startTimer() {
+  this.stopTimer(); // Evita dos timers simultáneos
+  this.timeLeft=100;
+  this.timerActivo = true;
+  this.timer = setInterval(() => {
+    this.timeLeft--;
+    // (Opcional) Actualiza un contador visual aquí si quieres
+    if (this.timeLeft <= 0) {
+      this.onTimerEnd();
+    }
+  }, 1000);
+}
+
+stopTimer() {
+  if (this.timer) {
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+  this.timerActivo = false;
+}
+
+onTimerEnd() {
+  this.stopTimer();
+  // Limpia todos los bloqueos y desmarca todos los asientos
+  this.removeAllBlockedSeats();
+  this.userAmount = this.initialUserAmount; // Regresa los puntos
+  this.updateSeatColorsByUserAmount(this.userAmount);
+  this.refreshMap();
+
+  // (Opcional) Muestra un mensaje al usuario
+  this.alertCtrl.create({
+    title: 'Tiempo agotado',
+    message: 'Se acabó el tiempo para reservar tus asientos. Puedes volver a intentar.',
+    buttons: [{ text: 'Aceptar' }]
+  }).present();
+}
+removeAllBlockedSeats() {
+  const miSesion = this.getSession();
+  // Elimina todos los bloqueos de esta sesión
+  this.blockedSeats = this.blockedSeats.filter(b => b.sesionId !== miSesion);
+  this.saveSeatsToStorage();
+
+  // Limpia tu cart visual
+  this.cart = [];
+  (this.options.map as any).selectedSeats = [];
+}
 
   private setupCartListener(sc: any) {
     sc.addEventListener('cartchange', () => {
       const cart = sc.getCart();
-
+      if(cart.length> 0 && !this.timerActivo){
+        this.startTimer();
+      }
+      if(cart.length === 0 && this.timerActivo){
+        this.stopTimer();
+      }
       // Actualiza estado (saldo restante y colores)
       this.actualizarEstadoUsuario();
 
@@ -635,7 +725,15 @@ export class SeatsPage {
         {
           text: 'Enviar',
           handler: () => {
-
+            this.soldSeats=[
+              ...this.soldSeats,
+              ...this.cart
+            ],
+            this.saveSeatsToStorage();
+            this.cart=[];
+             (this.options.map as any).selectedSeats = [];
+            this.refreshMap();
+            this.stopTimer();
             this.navCtrl.push('QrPage', { qrDataArray });
 
           }
