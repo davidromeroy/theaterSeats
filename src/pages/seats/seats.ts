@@ -53,7 +53,7 @@ export class SeatsPage {
 
   @ViewChild('seatContainer') seatContainer: ElementRef;
   
-   userAmount = 55;
+   userAmount = 50;
 
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
