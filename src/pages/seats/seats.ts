@@ -66,6 +66,8 @@ export class SeatsPage {
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
   globalScale: number = 1;
+  originalMapWidth: number;
+  originalMapHeight: number;
   translateX = 0;
   translateY = 0;
   startX = 0;
@@ -723,35 +725,37 @@ export class SeatsPage {
   }
 
   pinchToZoom() {
-    const map = this.seatContainer.nativeElement.querySelector('.sc-map-inner-container');
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
-    console.log('CONTAINER --->', container);
-    console.log('MAP --->', map);
 
-    const containerReact = container.getBoundingClientRect();
     this.hammer = new hammerjs(map);
+
+    // Almacena tamaño original del mapa solo una vez
+    if (!this.originalMapWidth) {
+      this.originalMapWidth = map.offsetWidth;
+      this.originalMapHeight = map.offsetHeight;
+    }
 
     this.hammer.get('pinch').set({ enable: true });
     this.hammer.get('pan').set({ direction: hammerjs.DIRECTION_ALL })
-    console.log('Zoom Level antes de la función --> ', this.zoomLevel);
+    console.log('Zoom Level antes de la función --> ', this.zoomLevel);   // 1, por default
 
-    // Manejar el gesto pinch
+    //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
       //console.log('----Funciona el gesto pinch----');
       this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
-      console.log('Zoom Level durante el gesto pinch --> ', this.zoomLevel);
 
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
       map.style.transformOrigin = '0 0';
 
     });
-
+    // 🔚 PINCH END
     this.hammer.on('pinchend', () => {
       this.globalScale = this.zoomLevel;
       console.log('Zoom Level durante el gesto pinch end --> ', this.globalScale);
     })
 
-    // Pan acumulativo
+    // 🎯 PAN START
     this.hammer.on('panstart', () => {
       console.log('-----Coordenadas iniciales X ----->', this.startX);
       console.log('-----Coordenadas iniciales Y ----->', this.startY);
@@ -763,9 +767,12 @@ export class SeatsPage {
     this.hammer.on('panmove', (ev) => {
       this.translateX = this.startX + ev.deltaX;
       this.translateY = this.startY + ev.deltaY;
+      
+      const containerReact = container.getBoundingClientRect();
 
-      const scaledWidth = map.offsetWidth * this.zoomLevel;
-      const scaledHeight = map.offsetHeight * this.zoomLevel;
+      const scaledWidth = this.originalMapWidth * this.zoomLevel;
+      const scaledHeight = this.originalMapHeight * this.zoomLevel;
+
 
       const maxTranslateX = 0;
       const minTranslateX = containerReact.width - scaledWidth;
@@ -775,8 +782,8 @@ export class SeatsPage {
 
       this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
-      console.log('-----Coordenadas durante gesto-----', this.translateX);
-      console.log('-----Coordenadas durante gesto-----', this.translateY);
+      console.log('-----Coordenadas durante gesto X: -----', this.translateX);
+      console.log('-----Coordenadas durante gesto Y: -----', this.translateY);
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
       map.style.transformOrigin = '0 0';
     })
