@@ -1,9 +1,3 @@
-<!--
-  Generated template for the QrPage page.
-
-  See http://ionicframework.com/docs/components/#navigation for more info on
-  Ionic pages and navigation.
--->
 <ion-header>
   <ion-navbar>
     <ion-title>Códigos QR</ion-title>
@@ -12,30 +6,110 @@
 
 <ion-content padding>
   <div class="qr-wrapper">
-    <!-- Slider cuando hay más de un código QR -->
+
+    <!-- Vista para múltiples boletos -->
     <ion-slides *ngIf="qrBoletos.length > 1" pager="true">
       <ion-slide *ngFor="let item of qrBoletos">
         <div class="ticket-card">
           <div class="ticket-header" [ngClass]="item.claseHeader">
-            <strong>Platea {{ item.platea }}</strong>
+            <div class="header-content">
+              <div class="platea-info">
+                <ion-icon name="md-chair"></ion-icon>
+                <strong>Platea {{ item.platea }}</strong>
+              </div>
+              <div class="fecha-hora">
+                <div class="icon-text">
+                  <ion-icon name="md-calendar"></ion-icon>
+                  <span class="fecha">Vie., 18 jul. 2025</span>
+                </div>
+                <div class="icon-text">
+                  <span class="hora">10:20</span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div class="funcion-nombre">
+            <span>Cumbia Divina</span>
+          </div>
+
+          <div class="ticket-nombre">
+            <span>{{ usuarioNombre }}</span>
+          </div>
+
           <div class="ticket-body">
             <img [src]="item.qrImage" [alt]="item.label" />
-            <p>{{ item.label }}</p>
+            <p>
+              <ion-icon name="md-pricetag"></ion-icon>
+              {{ item.label }}
+            </p>
+            <div class="duracion-funcion">
+              <ion-icon name="md-time"></ion-icon>
+              <span>Duración: 1h 30min</span>
+            </div>
+          </div>
+
+          <div class="ticket-footer">
+            <div class="station">
+              <ion-icon name="md-pin"></ion-icon>
+              <a href="https://www.google.com/maps?q=Teatro+Sánchez+Aguilar" target="_blank">
+                <div class="city">Teatro Sánchez Aguilar</div>
+              </a>
+            </div>
           </div>
         </div>
       </ion-slide>
     </ion-slides>
 
-    <!-- Vista sin slider cuando hay solo un código -->
+    <!-- Vista para un solo boleto -->
     <div *ngIf="qrBoletos.length === 1" class="ticket-card single-qr">
       <div class="ticket-header" [ngClass]="qrBoletos[0].claseHeader">
-        <strong> Platea {{ qrBoletos[0].platea }}</strong>
+        <div class="header-content">
+          <div class="platea-info">
+            <ion-icon name="md-chair"></ion-icon>
+            <strong>Platea {{ qrBoletos[0].platea }}</strong>
+          </div>
+          <div class="fecha-hora">
+            <div class="icon-text">
+              <ion-icon name="md-calendar"></ion-icon>
+              <span class="fecha">Vie., 18 jul. 2025</span>
+            </div>
+            <div class="icon-text">
+              <span class="hora">10:20</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <div class="funcion-nombre">
+        <span>Cumbia Divina</span>
+      </div>
+
+      <div class="ticket-nombre">
+        <span>{{ usuarioNombre }}</span>
+      </div>
+
       <div class="ticket-body">
         <img [src]="qrBoletos[0].qrImage" [alt]="qrBoletos[0].label" />
-        <p>{{ qrBoletos[0].label }}</p>
+        <p>
+          <ion-icon name="md-pricetag"></ion-icon>
+          {{ qrBoletos[0].label }}
+        </p>
+        <div class="duracion-funcion">
+          <ion-icon name="md-time"></ion-icon>
+          <span>Duración: 1h 30min</span>
+        </div>
+      </div>
+
+      <div class="ticket-footer">
+        <div class="station">
+          <ion-icon name="md-pin"></ion-icon>
+          <a href="https://www.google.com/maps?q=Teatro+Sánchez+Aguilar" target="_blank">
+            <div class="city">Teatro Sánchez Aguilar</div>
+          </a>
+        </div>
       </div>
     </div>
+
   </div>
 </ion-content>
