@@ -7,6 +7,7 @@ import { AlertController } from 'ionic-angular';
 declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
+const hammerjs = require('hammerjs')
 
 const seatLetters = [
   'A', 'B', 'C', 'D', 'E', 'F', 'G',
@@ -64,6 +65,7 @@ export class SeatsPage {
   blockTimes = 1 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
+  private hammer: any;
 
   constructor(
     public navCtrl: NavController,
@@ -711,6 +713,21 @@ export class SeatsPage {
       mapInner.style.transform = `scale(${this.zoomLevel})`;
       mapInner.style.transformOrigin = 'center bottom';
     }
+  }
+
+  pinchToZoom() {
+    const target = this.seatContainer.nativeElement.querySelector('.sc-map-inner-container');
+    this.hammer = new hammerjs(target);
+
+    this.hammer.get('pinch').set({ enable: true });
+    // Manejar el gesto pinch
+    this.hammer.on('pinch', (event) => {
+      this.zoomLevel = Math.max(0.3, Math.min(event.scale, 1.5)); // Limita el zoom entre 1x y 3x
+      target.style.transform = `scale(${this.zoomLevel})`;
+      target.style.transformOrigin = 'center bottom';
+      // this.renderer.setStyle(target, 'transform', `scale(${this.scale})`);
+
+    });
   }
 
   ionViewDidEnter() {
