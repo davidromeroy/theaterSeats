@@ -7,11 +7,11 @@ page-qr {
   }
 
   ion-slides {
-    margin-bottom: 40px; // separa los botones
+    margin-bottom: 40px;
   }
 
   .swiper-pagination {
-    bottom: 10px !important; // aleja los controles
+    bottom: 10px !important;
     text-align: center;
     z-index: 10;
 
@@ -26,81 +26,127 @@ page-qr {
     }
 
     .swiper-pagination-bullet-active {
-      background: #3f51b5; // color principal
+      background: #3f51b5;
     }
   }
 
   ion-slide {
     display: flex;
     justify-content: center;
-    min-height: 350px; // Ajusta según necesidad
+    min-height: 300px;
     margin-bottom: 40px;
   }
 
   .ticket-card {
     width: 90%;
-    max-width: 320px;
+    max-width: 340px;
     background: linear-gradient(135deg, #f4f4f4, #ffffff);
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    margin: 20px auto;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 16px auto;
     overflow: hidden;
     border: 2px dashed #ccc;
     position: relative;
     text-align: center;
-  }
 
-  .ticket-card::before, .ticket-card::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: #fff;
-    border: 2px solid #ccc;
-    border-radius: 50%;
-    top: 50%;
-    transform: translateY(-50%);
-  }
+    &::before, &::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
 
-  .ticket-card::before {
-    left: -12px;
-  }
+    &::before {
+      left: -12px;
+    }
 
-  .ticket-card::after {
-    right: -12px;
+    &::after {
+      right: -12px;
+    }
   }
 
   .ticket-header {
-    background-color: #3f51b5;
-    color: white;
     padding: 12px;
-    font-size: 18px;
+
     &.header-plateaA {
-      background-color: rgb(255, 255, 0); // rojo fuerte
+      background-color: rgb(255, 255, 0);
       color: #333;
     }
 
     &.header-plateaB {
-      background-color:  rgb(67, 227, 211); // ámbar
+      background-color: rgb(67, 227, 211);
       color: #333;
     }
 
     &.header-plateaC {
-      background-color: rgb(255, 0, 255); // verde
+      background-color: rgb(255, 0, 255);
       color: #333;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      strong {
+        font-size: 18px;
+      }
+
+      .fecha-hora {
+        display: flex;
+        flex-direction: column;
+        text-align: right;
+        font-size: 13px;
+
+        .hora {
+          font-weight: bold;
+        }
+
+        .fecha {
+          font-size: 12px;
+          color: #000; // ← Color negro aplicado
+        }
+      }
     }
   }
 
+  .ticket-nombre {
+    padding: 8px 16px 0;
+    font-size: 14px;
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  .funcion-nombre {
+    padding: 8px 16px 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  .duracion-funcion{
+    padding: 8px 16px 0;
+    font-size: 14px;
+    color: #2c3e50;
+    text-align: center;
+  }
+
   .ticket-body {
-    padding: 16px;
+    padding: 12px 16px;
   }
 
   .ticket-body img {
-    width: 100%;
-    max-width: 200px;
-    height: auto;
+    width: 160px;
+    height: 160px;
     border: 2px solid #ddd;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 8px;
     background-color: #fff;
     margin-bottom: 10px;
@@ -111,10 +157,41 @@ page-qr {
     font-size: 16px;
     color: #333;
   }
-  
+
+  .ticket-footer {
+    border-top: 1px dashed #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 16px;
+    font-size: 14px;
+
+    .station {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      ion-icon {
+        font-size: 18px;
+        color: #3f51b5; // ← color azul bonito para el icono
+      }
+
+      .code {
+        display: none;
+      }
+
+      .city {
+        font-size: 14px;
+        color: #333;
+      }
+    }
+
+    .arrow {
+      display: none;
+    }
+  }
 
   .single-qr {
     @extend .ticket-card;
   }
 }
-
