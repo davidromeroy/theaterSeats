@@ -452,7 +452,7 @@ export class SeatsPage {
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
-      this.applyZoom();
+      //this.applyZoom();
       this.pinchToZoom();
     });
   }
@@ -716,8 +716,9 @@ export class SeatsPage {
   applyZoom() {
     const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
     if (mapInner) {
-      mapInner.style.transform = `scale(${this.zoomLevel})`;
-      mapInner.style.transformOrigin = 'center bottom';
+      //mapInner.style.transform = `scale(${this.zoomLevel})`;
+      mapInner.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
+      mapInner.style.transformOrigin = '0 0';
     }
   }
 
