@@ -451,7 +451,7 @@ export class SeatsPage {
       container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
 
       // Opcional: aplica zoom si lo necesitas
-      this.zoomLevel = this.zoomLevel || 0.5;
+      this.zoomLevel = this.zoomLevel || 1.0;
       this.applyZoom();
       this.pinchToZoom();
     });
@@ -740,8 +740,8 @@ export class SeatsPage {
       this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
       console.log('Zoom Level durante el gesto pinch --> ', this.zoomLevel);
 
-      map.style.transform = `scale(${this.zoomLevel})`;
-      map.style.transformOrigin = 'center bottom';
+      map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
+      map.style.transformOrigin = '0 0';
 
     });
 
@@ -751,7 +751,7 @@ export class SeatsPage {
     })
 
     // Pan acumulativo
-    this.hammer.on('pan', (ev) => {
+    this.hammer.on('panstart', () => {
       console.log('-----Coordenadas iniciales X ----->', this.startX);
       console.log('-----Coordenadas iniciales Y ----->', this.startY);
 
@@ -776,6 +776,8 @@ export class SeatsPage {
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
       console.log('-----Coordenadas durante gesto-----', this.translateX);
       console.log('-----Coordenadas durante gesto-----', this.translateY);
+      map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
+      map.style.transformOrigin = '0 0';
     })
   }
 
