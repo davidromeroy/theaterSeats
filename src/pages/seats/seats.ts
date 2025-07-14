@@ -65,6 +65,11 @@ export class SeatsPage {
   blockTimes = 1 * 60 * 1000; // 2 minutos
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
+  globalScale: number = 1;
+  translateX = 0;
+  translateY = 0;
+  startX = 0;
+  startY = 0;
   private hammer: any;
 
   constructor(
@@ -448,6 +453,7 @@ export class SeatsPage {
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 0.5;
       this.applyZoom();
+      this.pinchToZoom();
     });
   }
 
@@ -716,18 +722,61 @@ export class SeatsPage {
   }
 
   pinchToZoom() {
-    const target = this.seatContainer.nativeElement.querySelector('.sc-map-inner-container');
-    this.hammer = new hammerjs(target);
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map-inner-container');
+    const container = this.seatContainer.nativeElement;
+    console.log('CONTAINER --->', container);
+    console.log('MAP --->', map);
+
+    const containerReact = container.getBoundingClientRect();
+    this.hammer = new hammerjs(map);
 
     this.hammer.get('pinch').set({ enable: true });
+    this.hammer.get('pan').set({ direction: hammerjs.DIRECTION_ALL })
+    console.log('Zoom Level antes de la función --> ', this.zoomLevel);
+
     // Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
-      this.zoomLevel = Math.max(0.3, Math.min(event.scale, 1.5)); // Limita el zoom entre 1x y 3x
-      target.style.transform = `scale(${this.zoomLevel})`;
-      target.style.transformOrigin = 'center bottom';
-      // this.renderer.setStyle(target, 'transform', `scale(${this.scale})`);
+      //console.log('----Funciona el gesto pinch----');
+      this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
+      console.log('Zoom Level durante el gesto pinch --> ', this.zoomLevel);
+
+      map.style.transform = `scale(${this.zoomLevel})`;
+      map.style.transformOrigin = 'center bottom';
 
     });
+
+    this.hammer.on('pinchend', () => {
+      this.globalScale = this.zoomLevel;
+      console.log('Zoom Level durante el gesto pinch end --> ', this.globalScale);
+    })
+
+    // Pan acumulativo
+    this.hammer.on('pan', (ev) => {
+      console.log('-----Coordenadas iniciales X ----->', this.startX);
+      console.log('-----Coordenadas iniciales Y ----->', this.startY);
+
+      this.startX = this.translateX;
+      this.startY = this.translateY;
+    })
+
+    this.hammer.on('panmove', (ev) => {
+      this.translateX = this.startX + ev.deltaX;
+      this.translateY = this.startY + ev.deltaY;
+
+      const scaledWidth = map.offsetWidth * this.zoomLevel;
+      const scaledHeight = map.offsetHeight * this.zoomLevel;
+
+      const maxTranslateX = 0;
+      const minTranslateX = containerReact.width - scaledWidth;
+
+      const maxTranslateY = 0;
+      const minTranslateY = containerReact.height - scaledHeight;
+
+      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
+      this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
+      console.log('-----Coordenadas durante gesto-----', this.translateX);
+      console.log('-----Coordenadas durante gesto-----', this.translateY);
+    })
   }
 
   ionViewDidEnter() {
