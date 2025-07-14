@@ -450,7 +450,7 @@ export class SeatsPage {
       // Centra el scroll del mapa (opcional)
       const scrollX = (container.scrollWidth - container.clientWidth) / 2;
       const scrollY = container.scrollHeight;
-      container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
+      // container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
@@ -716,7 +716,7 @@ export class SeatsPage {
   }
 
   applyZoom() {
-    const mapInner = document.querySelector('.sc-map-inner-container') as HTMLElement;
+    const mapInner = document.querySelector('.sc-map') as HTMLElement;
     if (mapInner) {
       //mapInner.style.transform = `scale(${this.zoomLevel})`;
       mapInner.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
@@ -785,7 +785,7 @@ export class SeatsPage {
       console.log('-----Coordenadas durante gesto X: -----', this.translateX);
       console.log('-----Coordenadas durante gesto Y: -----', this.translateY);
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-      map.style.transformOrigin = '0 0';
+      // map.style.transformOrigin = '0 0';
     })
   }
 
