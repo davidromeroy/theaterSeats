@@ -394,6 +394,11 @@ page-seats {
     }
 
   }
+  .budget-label{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   // 📱 MEDIAS RESPONSIVAS
   @media screen and (max-width: 768px) {
