@@ -489,6 +489,7 @@ clearExpiredBlocks() {
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
       //this.applyZoom();
+      this.initializeZoomToFit();
       this.pinchToZoom();
     });
   }
@@ -817,6 +818,32 @@ removeAllBlockedSeats() {
     }
   }
 
+  initializeZoomToFit() {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const container = this.seatContainer.nativeElement;
+    const containerRect = container.getBoundingClientRect();
+
+    const scaleX = containerRect.width / map.offsetWidth;
+    const scaleY = containerRect.height / map.offsetHeight;
+
+    // Escala mínima para que el mapa completo entre en el contenedor
+    this.zoomLevel = Math.min(scaleX, scaleY, 1);
+    this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
+
+    // Centrado horizontal y vertical
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2;
+
+    console.log(this.zoomLevel)
+
+    // Aplicar la transformación inicial
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
+  }
+
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     this.hammer = new hammerjs(map);
@@ -833,7 +860,7 @@ removeAllBlockedSeats() {
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
       const previousZoom = this.zoomLevel;
-      this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.4)); // Limita el zoom entre 0.2x y 1.5x
+      this.zoomLevel = Math.max(0.125, Math.min(event.scale * this.globalScale, 1.125)); // Limita el zoom entre 0.2x y 1.5x
       
       const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
       
@@ -901,15 +928,22 @@ removeAllBlockedSeats() {
     const scaledWidth = this.originalMapWidth * this.zoomLevel;
     const scaledHeight = this.originalMapHeight * this.zoomLevel;
 
-    const maxTranslateX = 0;
-    const minTranslateX = containerRect.width - scaledWidth;
+      // Si el mapa es más pequeño que el contenedor, centramos
+    if (scaledWidth < containerRect.width) {
+      this.translateX = (containerRect.width - scaledWidth) / 2;
+    } else {
+      const maxTranslateX = 0;
+      const minTranslateX = containerRect.width - scaledWidth;
+      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
+    }
 
-    const maxTranslateY = 0;
-    const minTranslateY = containerRect.height - scaledHeight;
-
-    // Evita que se mueva más allá del área visible
-    this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
-    this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
+    if (scaledHeight < containerRect.height) {
+      this.translateY = (containerRect.height - scaledHeight) / 2;
+    } else {
+      const maxTranslateY = 0;
+      const minTranslateY = containerRect.height - scaledHeight;
+      this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
+    }
   }
 
   ionViewDidEnter() {
