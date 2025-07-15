@@ -33,6 +33,9 @@
     <!--Dinero disponible del usuario -->
     <div class="budget-label">
       <p><strong>Puntos disponibles:</strong> ${{ userAmount }}</p>
+       <div *ngIf="timerActivo" class="timer">
+  Tiempo restante: {{ timeLeft | number:'1.0-0' }} segundos
+</div>
     </div>
 
     <!-- Leyenda de Plateas -->
@@ -51,7 +54,6 @@
           <div class="legend-bullet plateaC"></div>
           <p class="legend-description">Platea C ($20)</p>
         </li>
-        <button (click)="goToQr()">Ver entradas</button>
       </ul>
     </div>
     <!-- Mapa y carrito -->
