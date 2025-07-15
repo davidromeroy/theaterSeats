@@ -824,8 +824,6 @@ removeAllBlockedSeats() {
 
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
-    const container = this.seatContainer.nativeElement;
-
     this.hammer = new hammerjs(map);
 
     // Almacena tamaño original del mapa solo una vez
@@ -836,55 +834,71 @@ removeAllBlockedSeats() {
 
     this.hammer.get('pinch').set({ enable: true });
     this.hammer.get('pan').set({ direction: hammerjs.DIRECTION_ALL })
-    console.log('Zoom Level antes de la función --> ', this.zoomLevel);   // 1, por default
 
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
-      //console.log('----Funciona el gesto pinch----');
       this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
+      this.clampPanToBounds(); 
 
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
       map.style.transformOrigin = '0 0';
 
     });
+
     // 🔚 PINCH END
     this.hammer.on('pinchend', () => {
       this.globalScale = this.zoomLevel;
-      console.log('Zoom Level durante el gesto pinch end --> ', this.globalScale);
+      this.clampPanToBounds();
+
+      map.style.transition = 'transform 0.3s ease-out';
+      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+
+      setTimeout(() => {
+        map.style.transition = '';
+      }, 300);
     })
 
     // 🎯 PAN START
     this.hammer.on('panstart', () => {
-      console.log('-----Coordenadas iniciales X ----->', this.startX);
-      console.log('-----Coordenadas iniciales Y ----->', this.startY);
-
       this.startX = this.translateX;
       this.startY = this.translateY;
     })
 
+    // 🔎 PAN MOVE
     this.hammer.on('panmove', (ev) => {
       this.translateX = this.startX + ev.deltaX;
-      this.translateY = this.startY + ev.deltaY;
-      
-      const containerReact = container.getBoundingClientRect();
+      this.translateY = this.startY + ev.deltaY;      
+      this.clampPanToBounds();
 
-      const scaledWidth = this.originalMapWidth * this.zoomLevel;
-      const scaledHeight = this.originalMapHeight * this.zoomLevel;
-
-
-      const maxTranslateX = 0;
-      const minTranslateX = containerReact.width - scaledWidth;
-
-      const maxTranslateY = 0;
-      const minTranslateY = containerReact.height - scaledHeight;
-
-      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
-      this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
-      console.log('-----Coordenadas durante gesto X: -----', this.translateX);
-      console.log('-----Coordenadas durante gesto Y: -----', this.translateY);
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-      // map.style.transformOrigin = '0 0';
     })
+
+    // 🔚 PAN END
+    this.hammer.on('panend', () => {
+      this.clampPanToBounds();
+      map.style.transition = 'transform 0.3s ease-out';
+      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+
+      setTimeout(() => {
+        map.style.transition = '';
+      }, 300);
+    });
+  }
+
+  clampPanToBounds() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const scaledWidth = this.originalMapWidth * this.zoomLevel;
+    const scaledHeight = this.originalMapHeight * this.zoomLevel;
+
+    const maxTranslateX = 0;
+    const minTranslateX = containerRect.width - scaledWidth;
+
+    const maxTranslateY = 0;
+    const minTranslateY = containerRect.height - scaledHeight;
+
+    // Evita que se mueva más allá del área visible
+    this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
+    this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
   }
 
   ionViewDidEnter() {
