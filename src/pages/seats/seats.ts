@@ -55,7 +55,7 @@ export class SeatsPage {
   
    userAmount = 50;
 
-  initialUserAmount: number; // Valor original del usuario para cálculos internos
+   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
   // isReservado: boolean = false;// Nuevo
 
@@ -576,6 +576,8 @@ export class SeatsPage {
       const countP = document.querySelector('.cart-count');
       if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
+
+    
   }
 
   private setupSubmitHandler(sc: any) {

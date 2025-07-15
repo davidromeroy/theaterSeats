@@ -13,7 +13,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 export class QrPage {
 
   qrBoletos: any[] = [];
-  usuarioNombre: string = 'Bolivar Rodriguez Vargas'; // 🔽 Puedes personalizar esto dinámicamente
+  usuarioNombre: string = 'Bolivar Rodriguez Vargas'; //  Puedes personalizar esto dinámicamente
 
   constructor(public navCtrl: NavController, public navParams: NavParams) {
     this.qrBoletos = this.navParams.get('qrDataArray') || [];
