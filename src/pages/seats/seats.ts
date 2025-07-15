@@ -63,6 +63,7 @@ export class SeatsPage {
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
+  
  
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
