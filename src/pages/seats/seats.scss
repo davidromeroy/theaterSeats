@@ -292,6 +292,10 @@ page-seats {
       transform: scale(0.9);
     }
   }
+  .sc-seat.sc-seat-available:hover {
+    cursor: pointer;
+    opacity: 1;
+  }
 
   .sc-seat.sc-seat-disabled {
     min-width: 14px !important;

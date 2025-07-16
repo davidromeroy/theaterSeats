@@ -516,14 +516,10 @@ refreshMap() {
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
 
-      // Centra el scroll del mapa (opcional)
-      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
-      const scrollY = container.scrollHeight;
-      // container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
-
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
       //this.applyZoom();
+      this.initializeZoomToFit();
       this.pinchToZoom();
     });
   }
@@ -560,69 +556,6 @@ refreshMap() {
     this.updateSeatColorsByUserAmount(saldoRestante);
   }
 
-  /*private setupCartListener(sc: any) {
-  sc.addEventListener('cartchange', () => {
-    
-    const cart = sc.getCart();
-    this.actualizarEstadoUsuario(); // Actualiza todo al cambiar selección
-
-      // Valida saldo antes de guardar nada
-      let mensajeSaldo = '';
-      cart.forEach((item: any) => {
-        const row = item.index.row;
-        const col = item.index.col;
-        const platea = this.getPlateaDeAsiento(row, col);
-        if (
-          (platea === 'A' && this.userAmount < 40) ||
-          (platea === 'B' && this.userAmount < 30) ||
-          (platea === 'C' && this.userAmount < 20)
-        ) {
-          mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
-        }
-      });
-
-      if (mensajeSaldo) {
-        alert(mensajeSaldo);
-        sc.clearCart();
-        this.cart = [];
-        return;
-      }
-
-      // Solo guarda los bloqueos y el cart en storage
-      this.cart = cart.map((item: any) => ({
-        row: item.index.row,
-        col: item.index.col
-      }));
-
-      this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
-
-      // Muestra la cantidad seleccionada (esto es solo visual)
-      const labels = cart.map(seat => seat.label).join(', ');
-      const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
-    });
-
-    if (mensajeSaldo) {
-      alert(mensajeSaldo);
-      sc.clearCart();
-      this.cart = [];
-      return;
-    }
-
-    // Solo guarda los bloqueos y el cart en storage
-    this.cart = cart.map((item: any) => ({
-      row: item.index.row,
-      col: item.index.col
-    }));
-
-    this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
-
-    // Muestra la cantidad seleccionada (esto es solo visual)
-    const labels = cart.map(seat => seat.label).join(', ');
-    const countP = document.querySelector('.cart-count');
-    if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
-  });
-}*/
 formatTimeLeft(): string {
   let value = this.timeLeft;
   if (value < 0) value = 0;
@@ -892,10 +825,34 @@ reserveConfirm(qrDataArray) {
     }
   }
 
-  pinchToZoom() {
+  initializeZoomToFit() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
+    const containerRect = container.getBoundingClientRect();
 
+    const scaleX = containerRect.width / map.offsetWidth;
+    const scaleY = containerRect.height / map.offsetHeight;
+
+    // Escala mínima para que el mapa completo entre en el contenedor
+    this.zoomLevel = Math.min(scaleX, scaleY, 1);
+    this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
+
+    // Centrado horizontal y vertical
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2;
+
+    console.log(this.zoomLevel)
+
+    // Aplicar la transformación inicial
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
+  }
+
+  pinchToZoom() {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     this.hammer = new hammerjs(map);
 
     // Almacena tamaño original del mapa solo una vez
@@ -906,55 +863,94 @@ reserveConfirm(qrDataArray) {
 
     this.hammer.get('pinch').set({ enable: true });
     this.hammer.get('pan').set({ direction: hammerjs.DIRECTION_ALL })
-    console.log('Zoom Level antes de la función --> ', this.zoomLevel);   // 1, por default
 
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
-      //console.log('----Funciona el gesto pinch----');
-      this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
+      const previousZoom = this.zoomLevel;
+      this.zoomLevel = Math.max(0.125, Math.min(event.scale * this.globalScale, 1.125)); // Limita el zoom entre 0.2x y 1.5x
+      
+      const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+      
+      // Coordenadas del gesto dentro del contenedor
+      const gestureX = event.center.x - containerRect.left;
+      const gestureY = event.center.y - containerRect.top;
+
+      // Corrige el desplazamiento (esto es clave)
+      const offsetX = (gestureX - this.translateX) / previousZoom;
+      const offsetY = (gestureY - this.translateY) / previousZoom;
+
+      // Calcula nueva posición para mantener el gesto como centro
+      this.translateX = gestureX - offsetX * this.zoomLevel;
+      this.translateY = gestureY - offsetY * this.zoomLevel;
+
+      this.clampPanToBounds(); 
 
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
       map.style.transformOrigin = '0 0';
 
     });
+
     // 🔚 PINCH END
     this.hammer.on('pinchend', () => {
       this.globalScale = this.zoomLevel;
-      console.log('Zoom Level durante el gesto pinch end --> ', this.globalScale);
+      this.clampPanToBounds();
+
+      map.style.transition = 'transform 0.3s ease-out';
+      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+
+      setTimeout(() => {
+        map.style.transition = '';
+      }, 300);
     })
 
     // 🎯 PAN START
     this.hammer.on('panstart', () => {
-      console.log('-----Coordenadas iniciales X ----->', this.startX);
-      console.log('-----Coordenadas iniciales Y ----->', this.startY);
-
       this.startX = this.translateX;
       this.startY = this.translateY;
     })
 
+    // 🔎 PAN MOVE
     this.hammer.on('panmove', (ev) => {
       this.translateX = this.startX + ev.deltaX;
-      this.translateY = this.startY + ev.deltaY;
-      
-      const containerReact = container.getBoundingClientRect();
+      this.translateY = this.startY + ev.deltaY;      
+      this.clampPanToBounds();
 
-      const scaledWidth = this.originalMapWidth * this.zoomLevel;
-      const scaledHeight = this.originalMapHeight * this.zoomLevel;
-
-
-      const maxTranslateX = 0;
-      const minTranslateX = containerReact.width - scaledWidth;
-
-      const maxTranslateY = 0;
-      const minTranslateY = containerReact.height - scaledHeight;
-
-      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
-      this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
-      console.log('-----Coordenadas durante gesto X: -----', this.translateX);
-      console.log('-----Coordenadas durante gesto Y: -----', this.translateY);
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-      // map.style.transformOrigin = '0 0';
     })
+
+    // 🔚 PAN END
+    this.hammer.on('panend', () => {
+      this.clampPanToBounds();
+      map.style.transition = 'transform 0.3s ease-out';
+      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+
+      setTimeout(() => {
+        map.style.transition = '';
+      }, 300);
+    });
+  }
+
+  clampPanToBounds() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const scaledWidth = this.originalMapWidth * this.zoomLevel;
+    const scaledHeight = this.originalMapHeight * this.zoomLevel;
+
+      // Si el mapa es más pequeño que el contenedor, centramos
+    if (scaledWidth < containerRect.width) {
+      this.translateX = (containerRect.width - scaledWidth) / 2;
+    } else {
+      const maxTranslateX = 0;
+      const minTranslateX = containerRect.width - scaledWidth;
+      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
+    }
+
+    if (scaledHeight < containerRect.height) {
+      this.translateY = (containerRect.height - scaledHeight) / 2;
+    } else {
+      const maxTranslateY = 0;
+      const minTranslateY = containerRect.height - scaledHeight;
+      this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
+    }
   }
 
   ionViewDidEnter() {
