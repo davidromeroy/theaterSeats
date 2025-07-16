@@ -55,8 +55,8 @@ export class SeatsPage {
   timeLeft:number;
   timerActivo:boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
- 
-  userAmount = 50;
+
+  userAmount = 100;
 
    initialUserAmount: number; // Valor original del usuario para cálculos internos
 
@@ -64,7 +64,8 @@ export class SeatsPage {
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
-  
+  plateas: { [key: string]: { row: number, col: number }[] } = {};
+
  
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
@@ -182,21 +183,27 @@ export class SeatsPage {
     return seats;
   }
 
-  generateSideSeats(seatRows, count) {
+  generateSideSeats(seatRows, count, offset = 0, side = 'both') {
     const seats = [];
+
     seatRows.forEach(row => {
       const rowLayout = layout[row];
       const shift = rowLayout.shiftLeft;
       const [leftCount, centerCount, rightCount] = rowLayout.active;
 
-      for (let i = 0; i < Math.min(count, leftCount); i++) {
-        const col = shift + i;
-        seats.push({ row, col });
+      if (side === 'left' || side === 'both') {
+        for (let i = offset; i < Math.min(offset + count, leftCount); i++) {
+          const col = shift + i;
+          seats.push({ row, col });
+        }
       }
 
-      for (let i = 0; i < Math.min(count, rightCount); i++) {
-        const col = shift + leftCount + 8 + centerCount + (rightCount - count) + i;
-        seats.push({ row, col });
+      if (side === 'right' || side === 'both') {
+        for (let i = offset; i < Math.min(offset + count, rightCount); i++) {
+          // El cálculo de columna para el lado derecho ajustado
+          const col = shift + leftCount + 8 + centerCount + i;
+          seats.push({ row, col });
+        }
       }
     });
 
@@ -223,18 +230,58 @@ export class SeatsPage {
     return indexSeats;
   }
 
+  getPlateas(platea){
+    // Platea A: bloque central de filas medias
+    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+
+    //Platea B:
+    const plateaB = [
+      ...this.generateCentralBlockSeats([6, 7, 8, 9, 10, 11, 12, 13, 20, 21]),
+      ...this.generateSideSeats([7, 8, 9, 10, 11, 11, 12, 13], 9, 0, 'both'),
+      ...this.generateSideSeats([14], 4, 5, 'left'),                       // laterales en fila 14
+      ...this.generateSideSeats([14], 4, 0, 'right'),                       // laterales en fila 14
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 6, 'left'),
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 0, 'right'),
+      ...this.generateSideSeats([20, 21], 5, 0, 'both'),]
+
+    // Platea C:
+    const plateaC = [
+      ...this.generateSideSeats([0, 1, 2, 3, 4, 5], 8,0, 'both'),       // laterales superiores
+      ...this.generateSideSeats([6], 8, 0, 'both'),                       // laterales en fila 6
+      ...this.generateSideSeats([14], 5, 0, 'left'),                       // laterales en fila 14
+      ...this.generateSideSeats([14], 5, 4, 'right'),                       // laterales en fila 14
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 4, 'right'),       // laterales en filas 15–19
+      ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 0, 'left'),       // laterales en filas 15–19
+      ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])  //  centro en filas altas W–R
+    ];
+
+    switch (platea) {
+      case 'A':
+        return plateaA;
+      
+      case 'B':
+        return plateaB;
+        
+      case 'C':
+        return plateaC;
+
+      default:
+        console.log("Asiento Fuera de Rango");
+        break;
+    }
+  }
+
   // Plateas según el color (para la lógica de saldo)
   getPlateaDeAsiento(row: number, col: number) {
-    const centralA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
-    const plateaC = [
-      ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
-      ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
-      ...this.generateSideSeats([14], 5),
-      ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
-    ];
-    if (centralA.some(s => s.row === row && s.col === col)) return 'A';
-    if (plateaC.some(s => s.row === row && s.col === col)) return 'C';
-    return 'B';
+     const plateas = ['A', 'B', 'C'];
+
+  for (const p of plateas) {
+    const seats = this.getPlateas(p);
+    if (seats.some(s => s.row === row && s.col === col)) return p;
+  }
+
+  return 'X';
+    
   }
 
   options = {
@@ -252,19 +299,13 @@ export class SeatsPage {
           label: 'Platea A',
           price: 40,
           cssClass: 'bloqueado',
-          seats: this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]),
+          seats: this.getPlateas("A"),  
         },
         plateaC: {
           label: 'Platea C',
           price: 20,
           cssClass: 'bloqueado',
-          // seatRows: [0, 1, 2, 3, 4, 5],
-          seats: [
-            ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5]),
-            ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),
-            ...this.generateSideSeats([14], 5),
-            ...this.generateSideSeats([15, 16, 17, 18, 19], 6),
-          ]
+          seats: this.getPlateas("C"),  
         },
         index: {
           label: 'Index',
@@ -345,33 +386,13 @@ clearExpiredBlocks() {
       s => row === s.row && s.col === col
     );
   }
-  getPlateaForSeat = (row: number, col: number): string => {
-    // Platea A: bloque central de filas medias
-    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
 
-    // Platea C:
-    const plateaC = [
-      ...this.generateSideSeats([0, 1, 2, 3, 4, 5, 6], 8),       // laterales superiores
-      ...this.generateSideSeats([14], 5),                       // laterales en fila 14
-      ...this.generateSideSeats([15, 16, 17, 18, 19], 6),       // laterales en filas 15–19
-      ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5, 6])  //  centro en filas altas W–R
-    ];
-
-    const inA = plateaA.some(s => s.row === row && s.col === col);
-    if (inA) return 'Platea A';
-
-    const inC = plateaC.some(s => s.row === row && s.col === col);
-    if (inC) return 'Platea C';
-
-    return 'Platea B'; // por defecto
-  };
   // Solo disables de layout + vendidos
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
       //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
     ];
-    
   }
 
 //Nuevo funcion para llamar a la clase temporal
@@ -421,7 +442,6 @@ refreshMap() {
   });
 }
 
-
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
     const miSesion = this.getSession();
 
@@ -434,23 +454,23 @@ refreshMap() {
       return blocked.expires > Date.now();
     });
 
-  // Añade nuevos bloqueos
-  selectedSeats.forEach(seat => {
-    const alreadyBlocked = this.blockedSeats.some(
-      b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-    );
-    const alreadySold = this.soldSeats.some(
-      s => s.row === seat.row && s.col === seat.col
-    );
-    if (!alreadyBlocked && !alreadySold) {
-      this.blockedSeats.push({
-        row: seat.row,
-        col: seat.col,
-        expires: Date.now() + this.timeLeft *1000,
-        sesionId: miSesion
-      });
-    }
-  });
+    // Añade nuevos bloqueos
+    selectedSeats.forEach(seat => {
+      const alreadyBlocked = this.blockedSeats.some(
+        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+      );
+      const alreadySold = this.soldSeats.some(
+        s => s.row === seat.row && s.col === seat.col
+      );
+      if (!alreadyBlocked && !alreadySold) {
+        this.blockedSeats.push({
+          row: seat.row,
+          col: seat.col,
+          expires: Date.now() + this.timeLeft *1000,
+          sesionId: miSesion
+        });
+      }
+    });
 
     // Actualiza tu carrito
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
@@ -458,9 +478,6 @@ refreshMap() {
     // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
     this.saveSeatsToStorage();
   }
-
-
-
 
   private insertStage(container: HTMLElement) {
     const outer = container.querySelector('.sc-map');
@@ -524,17 +541,15 @@ refreshMap() {
     });
   }
 
-
-
   //Nuevos metodos: Metodo para calcular el precio del asiento
   private getSeatPrice(seat: any): number {
     const row = seat.index.row;
     const col = seat.index.col;
-    const platea = this.getPlateaForSeat(row, col);
+    const platea = this.getPlateaDeAsiento(row, col);
 
-    if (platea === 'Platea A') return 40;
-    if (platea === 'Platea B') return 30;
-    if (platea === 'Platea C') return 20;
+    if (platea === 'A') return 40;
+    if (platea === 'B') return 30;
+    if (platea === 'C') return 20;
     return 0;
   }
 
@@ -572,7 +587,7 @@ isTimeCritical(): boolean {
 
   startTimer() {
   this.stopTimer(); // Evita dos timers simultáneos
-  this.timeLeft=40;
+  this.timeLeft=400;
   this.timerActivo = true;
   this.timer = setInterval(() => {
     this.timeLeft--;
@@ -953,6 +968,9 @@ reserveConfirm(qrDataArray) {
   }
 
   ionViewDidEnter() {
+    console.log(this.getPlateas("A"));
+    console.log(this.getPlateas("B"));
+    console.log(this.getPlateas("C"));
 
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
