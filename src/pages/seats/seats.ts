@@ -368,7 +368,7 @@ clearExpiredBlocks() {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
+     // ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
     ];
     
   }
@@ -593,9 +593,24 @@ clearExpiredBlocks() {
     if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
   });
 }*/
+formatTimeLeft(): string {
+  let value = this.timeLeft;
+  if (value < 0) value = 0;
+  const min = Math.floor(value / 60);
+  const sec = value % 60;
+  return `${this.pad(min)}:${this.pad(sec)}`;
+}
+
+pad(num: number) {
+  return num < 10 ? '0' + num : num;
+}
+isTimeCritical(): boolean {
+  return this.timeLeft <= 30 && this.timeLeft > 0;
+}
+
   startTimer() {
   this.stopTimer(); // Evita dos timers simultáneos
-  this.timeLeft=100;
+  this.timeLeft=40;
   this.timerActivo = true;
   this.timer = setInterval(() => {
     this.timeLeft--;

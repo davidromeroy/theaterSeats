@@ -33,9 +33,12 @@
     <!--Dinero disponible del usuario -->
     <div class="budget-label">
       <p><strong>Puntos disponibles:</strong> ${{ userAmount }}</p>
-       <div *ngIf="timerActivo" class="timer">
-  Tiempo restante: {{ timeLeft | number:'1.0-0' }} segundos
+      <div *ngIf="timerActivo" 
+     class="timer"
+     [ngClass]="{'timer-critical': isTimeCritical()}">
+   {{ formatTimeLeft() }}
 </div>
+
     </div>
 
     <!-- Leyenda de Plateas -->
