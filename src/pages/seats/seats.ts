@@ -58,12 +58,13 @@ export class SeatsPage {
 
   userAmount = 50;
 
-  initialUserAmount: number; // Valor original del usuario para cálculos internos
+   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
   // isReservado: boolean = false;// Nuevo
 
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
+  
  
   cart: { row: number, col: number }[] = [];
   zoomLevel: number;
@@ -368,29 +369,58 @@ clearExpiredBlocks() {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-     // ...this.soldSeats.map(s => ({ row: s.row, col: s.col }))
+      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
     ];
     
   }
-  
-  // Solo reserved seats: temporalmente bloqueados por otra sesión
- getReservedSeats() {
+
+//Nuevo funcion para llamar a la clase temporal
+applyTemporaryClasses() {
   const miSesion = this.getSession();
-  // Asientos bloqueados por otros
-  const reservados = this.blockedSeats
-    .filter(b => b.expires > Date.now() && b.sesionId !== miSesion)
-    .map(b => ({ row: b.row, col: b.col }));
-  // + Asientos vendidos (de todos)
-  const ocupados = this.soldSeats.map(s => ({ row: s.row, col: s.col }));
-  return [...reservados, ...ocupados];
+
+  // Limpia temporales anteriores
+  Array.from(document.querySelectorAll('.temporal')).forEach(el => el.classList.remove('temporal'));
+
+  this.blockedSeats.forEach(seat => {
+    const esDeOtraSesion = seat.sesionId !== miSesion && seat.expires > Date.now();
+    if (esDeOtraSesion) {
+      // Calcula el label visual
+      const label = this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col });
+
+      // Encuentra el asiento por label
+      const el = Array.from(document.querySelectorAll('.sc-seat'))
+        .find((e: Element) => e.textContent === label);
+
+      if (el && el.classList.contains('sc-seat-reserved')) {
+        el.classList.remove('sc-seat-reserved'); // quita gris si lo tiene
+      }
+
+      if (el && !el.classList.contains('temporal')) {
+        el.classList.add('temporal'); // aplica naranja
+      }
+    }
+  });
+}
+//
+  
+getReservedSeats() {
+  // Solo devolver los asientos vendidos confirmados
+  return this.soldSeats.map(s => ({ row: s.row, col: s.col }));
 }
 
-  refreshMap() {
-    if (!this.seatContainer) return;
-    this.options.map.disabledSeats = this.getDisabledSeats();
-    this.options.map.reservedSeats = this.getReservedSeats();
-    this.initSeatChart(this.seatContainer.nativeElement);
-  }
+refreshMap() {
+  if (!this.seatContainer) return;
+  this.options.map.disabledSeats = this.getDisabledSeats();
+  this.options.map.reservedSeats = this.getReservedSeats();
+
+  this.initSeatChart(this.seatContainer.nativeElement);
+
+  // Nuevo: Esperar al render completo antes de aplicar estilos
+  requestAnimationFrame(() => {
+    this.applyTemporaryClasses();
+  });
+}
+
 
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
     const miSesion = this.getSession();
@@ -486,10 +516,14 @@ clearExpiredBlocks() {
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
 
+      // Centra el scroll del mapa (opcional)
+      const scrollX = (container.scrollWidth - container.clientWidth) / 2;
+      const scrollY = container.scrollHeight;
+      // container.scrollTo({ left: scrollX, top: scrollY, behavior: 'auto' });
+
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
       //this.applyZoom();
-      this.initializeZoomToFit();
       this.pinchToZoom();
     });
   }
@@ -708,6 +742,8 @@ removeAllBlockedSeats() {
       const countP = document.querySelector('.cart-count');
       if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
     });
+
+    
   }
 
   private setupSubmitHandler(sc: any) {
@@ -751,40 +787,63 @@ removeAllBlockedSeats() {
   }
 
 
-  reserveConfirm(qrDataArray) {
-
-    const alert = this.alertCtrl.create({
-      title: 'Confirmar reserva',
-      message: '¿Deseas reservar estos asientos?',
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel',
-          handler: () => {
-            // Cancel
-          }
-        },
-        {
-          text: 'Enviar',
-          handler: () => {
-            this.soldSeats=[
-              ...this.soldSeats,
-              ...this.cart
-            ],
-            this.saveSeatsToStorage();
-            this.cart=[];
-             (this.options.map as any).selectedSeats = [];
-            this.refreshMap();
-            this.stopTimer();
-            this.navCtrl.push('QrPage', { qrDataArray });
-
-          }
+reserveConfirm(qrDataArray) {
+  const alert = this.alertCtrl.create({
+    title: 'Confirmar reserva',
+    message: '¿Deseas reservar estos asientos?',
+    buttons: [
+      {
+        text: 'Cancelar',
+        role: 'cancel',
+        handler: () => {
+          // El usuario canceló la reserva
         }
-      ]
-    });
-    alert.present();
+      },
+      {
+        text: 'Enviar',
+        handler: () => {
+          // 🔁 Recorrer los asientos del carrito
+          this.cart.forEach(seat => {
+            // 🔍 Buscar el elemento en el DOM por ID
+            const el = document.querySelector(`#seat-${seat.row}-${seat.col}`);
+            if (el) {
+              // 🧼 Remover clase temporal (naranja)
+              el.classList.remove('temporal');
 
-  }
+              // ✅ Aplicar clase de reservado (gris)
+              el.classList.add('sc-seat-reserved');
+            }
+          });
+
+          // ✅ Actualizar lista de vendidos
+          this.soldSeats = [
+            ...this.soldSeats,
+            ...this.cart
+          ];
+
+          // ✅ Guardar los cambios en localStorage
+          this.saveSeatsToStorage();
+
+          // 🔁 Resetear carrito visual
+          this.cart = [];
+          (this.options.map as any).selectedSeats = [];
+
+          // 🔄 Volver a renderizar el mapa con estado actualizado
+          this.refreshMap();
+
+          // ⏱️ Detener el temporizador
+          this.stopTimer();
+
+          // 🎟️ Navegar a la página del QR con los datos generados
+          this.navCtrl.push('QrPage', { qrDataArray });
+        }
+      }
+    ]
+  });
+
+  alert.present(); 
+}
+
 
   ionViewDidLoad() {
     this.loadSeatsFromStorage();
@@ -833,34 +892,10 @@ removeAllBlockedSeats() {
     }
   }
 
-  initializeZoomToFit() {
-    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
-    const container = this.seatContainer.nativeElement;
-    const containerRect = container.getBoundingClientRect();
-
-    const scaleX = containerRect.width / map.offsetWidth;
-    const scaleY = containerRect.height / map.offsetHeight;
-
-    // Escala mínima para que el mapa completo entre en el contenedor
-    this.zoomLevel = Math.min(scaleX, scaleY, 1);
-    this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
-
-    // Centrado horizontal y vertical
-    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
-
-    this.translateX = (containerRect.width - scaledMapWidth) / 2;
-    this.translateY = (containerRect.height - scaledMapHeight) / 2;
-
-    console.log(this.zoomLevel)
-
-    // Aplicar la transformación inicial
-    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-    map.style.transformOrigin = '0 0';
-  }
-
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const container = this.seatContainer.nativeElement;
+
     this.hammer = new hammerjs(map);
 
     // Almacena tamaño original del mapa solo una vez
@@ -871,94 +906,55 @@ removeAllBlockedSeats() {
 
     this.hammer.get('pinch').set({ enable: true });
     this.hammer.get('pan').set({ direction: hammerjs.DIRECTION_ALL })
+    console.log('Zoom Level antes de la función --> ', this.zoomLevel);   // 1, por default
 
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
-      const previousZoom = this.zoomLevel;
-      this.zoomLevel = Math.max(0.125, Math.min(event.scale * this.globalScale, 1.125)); // Limita el zoom entre 0.2x y 1.5x
-      
-      const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
-      
-      // Coordenadas del gesto dentro del contenedor
-      const gestureX = event.center.x - containerRect.left;
-      const gestureY = event.center.y - containerRect.top;
-
-      // Corrige el desplazamiento (esto es clave)
-      const offsetX = (gestureX - this.translateX) / previousZoom;
-      const offsetY = (gestureY - this.translateY) / previousZoom;
-
-      // Calcula nueva posición para mantener el gesto como centro
-      this.translateX = gestureX - offsetX * this.zoomLevel;
-      this.translateY = gestureY - offsetY * this.zoomLevel;
-
-      this.clampPanToBounds(); 
+      //console.log('----Funciona el gesto pinch----');
+      this.zoomLevel = Math.max(0.3, Math.min(event.scale * this.globalScale, 1.5)); // Limita el zoom entre 0.3x y 1.5x
 
       map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
       map.style.transformOrigin = '0 0';
 
     });
-
     // 🔚 PINCH END
     this.hammer.on('pinchend', () => {
       this.globalScale = this.zoomLevel;
-      this.clampPanToBounds();
-
-      map.style.transition = 'transform 0.3s ease-out';
-      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-
-      setTimeout(() => {
-        map.style.transition = '';
-      }, 300);
+      console.log('Zoom Level durante el gesto pinch end --> ', this.globalScale);
     })
 
     // 🎯 PAN START
     this.hammer.on('panstart', () => {
+      console.log('-----Coordenadas iniciales X ----->', this.startX);
+      console.log('-----Coordenadas iniciales Y ----->', this.startY);
+
       this.startX = this.translateX;
       this.startY = this.translateY;
     })
 
-    // 🔎 PAN MOVE
     this.hammer.on('panmove', (ev) => {
       this.translateX = this.startX + ev.deltaX;
-      this.translateY = this.startY + ev.deltaY;      
-      this.clampPanToBounds();
+      this.translateY = this.startY + ev.deltaY;
+      
+      const containerReact = container.getBoundingClientRect();
 
-      map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-    })
+      const scaledWidth = this.originalMapWidth * this.zoomLevel;
+      const scaledHeight = this.originalMapHeight * this.zoomLevel;
 
-    // 🔚 PAN END
-    this.hammer.on('panend', () => {
-      this.clampPanToBounds();
-      map.style.transition = 'transform 0.3s ease-out';
-      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
 
-      setTimeout(() => {
-        map.style.transition = '';
-      }, 300);
-    });
-  }
-
-  clampPanToBounds() {
-    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
-    const scaledWidth = this.originalMapWidth * this.zoomLevel;
-    const scaledHeight = this.originalMapHeight * this.zoomLevel;
-
-      // Si el mapa es más pequeño que el contenedor, centramos
-    if (scaledWidth < containerRect.width) {
-      this.translateX = (containerRect.width - scaledWidth) / 2;
-    } else {
       const maxTranslateX = 0;
-      const minTranslateX = containerRect.width - scaledWidth;
-      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
-    }
+      const minTranslateX = containerReact.width - scaledWidth;
 
-    if (scaledHeight < containerRect.height) {
-      this.translateY = (containerRect.height - scaledHeight) / 2;
-    } else {
       const maxTranslateY = 0;
-      const minTranslateY = containerRect.height - scaledHeight;
+      const minTranslateY = containerReact.height - scaledHeight;
+
+      this.translateX = Math.max(minTranslateX, Math.min(this.translateX, maxTranslateX));
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
-    }
+      console.log('-----Coordenadas durante gesto X: -----', this.translateX);
+      console.log('-----Coordenadas durante gesto Y: -----', this.translateY);
+      map.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
+      // map.style.transformOrigin = '0 0';
+    })
   }
 
   ionViewDidEnter() {

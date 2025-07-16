@@ -298,15 +298,6 @@ page-seats {
     width: 14px !important;
   }
 
-  .sc-seat.sc-seat-reserved {
-    background: #ff9800 !important; // naranja o el color que prefieras
-    color: #fff !important;
-    opacity: 0.95;
-    font-weight: bold;
-    cursor: not-allowed;
-    border: 2px solid #fff;
-  }
-
   .sc-seat.sc-seat-selected {
     cursor: pointer;
     background-color: #95013d;
@@ -331,12 +322,23 @@ page-seats {
 }
 
 
+  //ocupados
   .sc-seat.sc-seat-reserved,
   .sc-seat-reserved {
     color: white;
     background-color: #a2a2a2;
-    // cursor: not-allowed;
+     cursor: not-allowed;
   }
+
+//Nuevo: clase para asientos temporales
+.temporal {
+  background-color: orange !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+
 
   // 🎫 PLATEAS (A, B, C)
   .plateaA {
