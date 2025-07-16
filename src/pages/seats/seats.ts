@@ -401,7 +401,7 @@ applyTemporaryClasses() {
     }
   });
 }
-
+//
   
 getReservedSeats() {
   // Solo devolver los asientos vendidos confirmados
