@@ -560,10 +560,87 @@ refreshMap() {
     this.updateSeatColorsByUserAmount(saldoRestante);
   }
 
+  /*private setupCartListener(sc: any) {
+  sc.addEventListener('cartchange', () => {
+    
+    const cart = sc.getCart();
+    this.actualizarEstadoUsuario(); // Actualiza todo al cambiar selección
 
-startTimer() {
+      // Valida saldo antes de guardar nada
+      let mensajeSaldo = '';
+      cart.forEach((item: any) => {
+        const row = item.index.row;
+        const col = item.index.col;
+        const platea = this.getPlateaDeAsiento(row, col);
+        if (
+          (platea === 'A' && this.userAmount < 40) ||
+          (platea === 'B' && this.userAmount < 30) ||
+          (platea === 'C' && this.userAmount < 20)
+        ) {
+          mensajeSaldo = `No tienes saldo suficiente para Platea ${platea}.`;
+        }
+      });
+
+      if (mensajeSaldo) {
+        alert(mensajeSaldo);
+        sc.clearCart();
+        this.cart = [];
+        return;
+      }
+
+      // Solo guarda los bloqueos y el cart en storage
+      this.cart = cart.map((item: any) => ({
+        row: item.index.row,
+        col: item.index.col
+      }));
+
+      this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
+
+      // Muestra la cantidad seleccionada (esto es solo visual)
+      const labels = cart.map(seat => seat.label).join(', ');
+      const countP = document.querySelector('.cart-count');
+      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+    });
+
+    if (mensajeSaldo) {
+      alert(mensajeSaldo);
+      sc.clearCart();
+      this.cart = [];
+      return;
+    }
+
+    // Solo guarda los bloqueos y el cart en storage
+    this.cart = cart.map((item: any) => ({
+      row: item.index.row,
+      col: item.index.col
+    }));
+
+    this.onSeatChange(this.cart); // Esto SÓLO actualiza storage y arrays, NO la UI
+
+    // Muestra la cantidad seleccionada (esto es solo visual)
+    const labels = cart.map(seat => seat.label).join(', ');
+    const countP = document.querySelector('.cart-count');
+    if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+  });
+}*/
+formatTimeLeft(): string {
+  let value = this.timeLeft;
+  if (value < 0) value = 0;
+  const min = Math.floor(value / 60);
+  const sec = value % 60;
+  return `${this.pad(min)}:${this.pad(sec)}`;
+}
+
+pad(num: number) {
+  return num < 10 ? '0' + num : num;
+}
+isTimeCritical(): boolean {
+  return this.timeLeft <= 30 && this.timeLeft > 0;
+}
+
+  startTimer() {
   this.stopTimer(); // Evita dos timers simultáneos
-  this.timeLeft=100;
+  this.timeLeft=40;
   this.timerActivo = true;
   this.timer = setInterval(() => {
     this.timeLeft--;
