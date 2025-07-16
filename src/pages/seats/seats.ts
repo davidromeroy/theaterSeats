@@ -55,7 +55,7 @@ export class SeatsPage {
   timeLeft:number;
   timerActivo:boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
-
+ 
   userAmount = 50;
 
    initialUserAmount: number; // Valor original del usuario para cálculos internos
@@ -553,7 +553,6 @@ refreshMap() {
     const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
 
     this.userAmount = saldoRestante;
-    this.updateSeatColorsByUserAmount(saldoRestante);
   }
 
 formatTimeLeft(): string {
