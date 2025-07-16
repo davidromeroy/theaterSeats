@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { AlertController, IonicPageModule } from 'ionic-angular';
+import { IonicPageModule } from 'ionic-angular';
 import { SeatsPage } from './seats';
 
 @NgModule({
