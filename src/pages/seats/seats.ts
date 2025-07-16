@@ -237,7 +237,7 @@ export class SeatsPage {
     //Platea B:
     const plateaB = [
       ...this.generateCentralBlockSeats([6, 7, 8, 9, 10, 11, 12, 13, 20, 21]),
-      ...this.generateSideSeats([7, 8, 9, 10, 11, 11, 12, 13], 9, 0, 'both'),
+      ...this.generateSideSeats([7, 8, 9, 10, 11, 12, 13], 9, 0, 'both'),
       ...this.generateSideSeats([14], 4, 5, 'left'),                       // laterales en fila 14
       ...this.generateSideSeats([14], 4, 0, 'right'),                       // laterales en fila 14
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 6, 'left'),
@@ -858,7 +858,6 @@ reserveConfirm(qrDataArray) {
     this.translateX = (containerRect.width - scaledMapWidth) / 2;
     this.translateY = (containerRect.height - scaledMapHeight) / 2;
 
-    console.log(this.zoomLevel)
 
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
@@ -968,9 +967,6 @@ reserveConfirm(qrDataArray) {
   }
 
   ionViewDidEnter() {
-    console.log(this.getPlateas("A"));
-    console.log(this.getPlateas("B"));
-    console.log(this.getPlateas("C"));
 
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
