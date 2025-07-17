@@ -668,7 +668,7 @@ removeAllBlockedSeats() {
         mensajeSaldo = `No tienes puntos suficiente para reservar más de un asiento`;
       }
 
-      if (mensajeSaldo) {
+     if (mensajeSaldo) {
         alert(mensajeSaldo);
         sc.clearCart();
         this.cart = [];
