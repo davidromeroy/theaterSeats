@@ -646,7 +646,7 @@ removeAllBlockedSeats() {
 
       // Lógica unificada: acumulativa + validación por platea + mensaje claro
       let saldoTemp = this.initialUserAmount;
-      let mensajeSaldo = '';
+      
       let detallesInvalidos: string[] = [];
 
       for (const item of cart) {
