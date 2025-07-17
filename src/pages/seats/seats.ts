@@ -632,68 +632,83 @@ removeAllBlockedSeats() {
   (this.options.map as any).selectedSeats = [];
 }
 
-  private setupCartListener(sc: any) {
-    sc.addEventListener('cartchange', () => {
-      const cart = sc.getCart();
-      if(cart.length> 0 && !this.timerActivo){
-        this.startTimer();
+private setupCartListener(sc: any) {
+  let reconstruyendoCart = false;
+
+  sc.addEventListener('cartchange', () => {
+    const cart = sc.getCart();
+
+    // ✅ Evita afectar el temporizador si estamos en medio de una reconstrucción visual
+    if (!reconstruyendoCart) {
+      if (cart.length > 0 && !this.timerActivo) this.startTimer();
+      if (cart.length === 0 && this.timerActivo) this.stopTimer();
+    }
+
+    let saldoTemp = this.initialUserAmount;
+    const detallesInvalidos: string[] = [];
+    const asientosValidos: any[] = [];
+
+    for (const item of cart) {
+      const row = item.index.row;
+      const col = item.index.col;
+      const platea = this.getPlateaDeAsiento(row, col);
+      const precio = this.getSeatPrice({ index: { row, col } });
+
+      if (saldoTemp >= precio) {
+        saldoTemp -= precio;
+        asientosValidos.push(item);
+      } else {
+        detallesInvalidos.push(`Platea ${platea} ($${precio})`);
       }
-      if(cart.length === 0 && this.timerActivo){
-        this.stopTimer();
-      }
-      // Actualiza estado (saldo restante y colores)
-      this.actualizarEstadoUsuario();
+    }
 
-      // Lógica unificada: acumulativa + validación por platea + mensaje claro
-      let saldoTemp = this.initialUserAmount;
-      let mensajeSaldo = '';
-      let detallesInvalidos: string[] = [];
+    if (detallesInvalidos.length > 0) {
+      const alertaError = this.alertCtrl.create({
+        title: 'Puntos insuficientes',
+        message: `Se han removido los asientos sin saldo suficiente:\n${detallesInvalidos.join('\n')}`,
+        buttons: [{ text: 'Aceptar' }]
+      });
+      alertaError.present();
 
-      for (const item of cart) {
-        const row = item.index.row;
-        const col = item.index.col;
-        const platea = this.getPlateaDeAsiento(row, col);
-        const precio = this.getSeatPrice({ index: { row, col } });
+      // 🔐 Indicamos que estamos en proceso de reconstrucción visual
+      reconstruyendoCart = true;
 
-        if (saldoTemp >= precio) {
-          saldoTemp -= precio; // Pasa, descuenta del saldo temporal
-        } else {
-          // No alcanza saldo, guarda mensaje con detalles
-          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
-        }
-      }
+      // ✅ Limpiar y seleccionar solo válidos sin disparar stopTimer()
+      sc.clearCart();
+      (this.options.map as any).selectedSeats = asientosValidos.map(a => a.index);
+      this.refreshMap();
 
-      // Si hay errores y hay más de un asiento seleccionado
-      if (detallesInvalidos.length > 0 && cart.length > 1) {
-     
-        const alertaError = this.alertCtrl.create({
-          'title': 'Puntos insuficientes',
-          'message': 'No cuenta con los puntos suficientes para poder canjear ese asiento revise sus puntos',
-          buttons:[{text:'Aceptar'}]
-        });
-        alertaError.present()
-        sc.clearCart();
-        this.cart = [];
-        return;
-      }
+      // ✅ Esperamos al siguiente frame y restablecemos la bandera
+      requestAnimationFrame(() => {
+        reconstruyendoCart = false;
+      });
+    }
 
-      // Actualiza el carrito en memoria y en storage
-      this.cart = cart.map((item: any) => ({
-        row: item.index.row,
-        col: item.index.col
-      }));
+    // Actualiza carrito
+    this.cart = asientosValidos.map(item => ({
+      row: item.index.row,
+      col: item.index.col
+    }));
 
-      // Actualiza bloqueos
-      this.onSeatChange(this.cart);
+    this.onSeatChange(this.cart);
 
-      // Actualiza contador visual
-      const labels = cart.map(seat => seat.label).join(', ');
+    // Actualiza visual del contador
+    requestAnimationFrame(() => {
+      const labels = this.cart
+        .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
+        .join(', ');
       const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+      if (countP) countP.textContent = `${this.cart.length} tickets:\n${labels}`;
     });
 
-    
-  }
+    this.actualizarEstadoUsuario();
+  });
+}
+
+
+
+
+
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
