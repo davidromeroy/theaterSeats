@@ -665,11 +665,13 @@ removeAllBlockedSeats() {
 
       // Si hay errores y hay más de un asiento seleccionado
       if (detallesInvalidos.length > 0 && cart.length > 1) {
-        mensajeSaldo = `No tienes puntos suficiente para reservar más de un asiento`;
-      }
-
-     if (mensajeSaldo) {
-        alert(mensajeSaldo);
+     
+        const alertaError = this.alertCtrl.create({
+          'title': 'Puntos insuficientes',
+          'message': 'No cuenta con los puntos suficientes para poder canjear ese asiento revise sus puntos',
+          buttons:[{text:'Aceptar'}]
+        });
+        alertaError.present()
         sc.clearCart();
         this.cart = [];
         return;
@@ -711,7 +713,12 @@ removeAllBlockedSeats() {
 
 
       if (!cart || cart.length === 0) {
-        alert('No hay asientos seleccionados.');
+       const alertaError = this.alertCtrl.create({
+        title: 'Asientos no seleccionados',
+        message: 'No hay asientos seleccionados, Porfavor seleccione un asiento',
+        buttons:[{text:'Aceptar'}]
+       })
+        alertaError.present();
         return;
       }
       const qrDataPromises = cart.map(async (seat) => {
