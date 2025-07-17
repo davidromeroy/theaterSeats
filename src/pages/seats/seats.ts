@@ -56,12 +56,11 @@ export class SeatsPage {
   timerActivo:boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
 
-  userAmount = 100;
+   userAmount = 100;
 
    initialUserAmount: number; // Valor original del usuario para cálculos internos
 
-  // isReservado: boolean = false;// Nuevo
-
+   
   blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
   soldSeats: { row: number, col: number }[] = [];
   plateas: { [key: string]: { row: number, col: number }[] } = {};
