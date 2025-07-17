@@ -390,7 +390,7 @@ clearExpiredBlocks() {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
+      
     ];
   }
 
