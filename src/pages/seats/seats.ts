@@ -535,7 +535,6 @@ refreshMap() {
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
-      //this.applyZoom();
       this.initializeZoomToFit();
       this.pinchToZoom();
     });
@@ -825,26 +824,6 @@ reserveConfirm(qrDataArray) {
 
   }
 
-  zoomIn() {
-    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
-    console.log(this.zoomLevel)
-    this.applyZoom();
-  }
-
-  zoomOut() {
-    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
-    console.log(this.zoomLevel)
-    this.applyZoom();
-  }
-
-  applyZoom() {
-    const mapInner = document.querySelector('.sc-map') as HTMLElement;
-    if (mapInner) {
-      //mapInner.style.transform = `scale(${this.zoomLevel})`;
-      mapInner.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-      mapInner.style.transformOrigin = '0 0';
-    }
-  }
 
   initializeZoomToFit() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');

@@ -155,26 +155,6 @@ page-seats {
     user-select: none;
   }
 
-  // Botenes Zoom 
-  .zoom-controls {
-    position: relative;
-    bottom: 1rem;
-    right: 1rem;
-    display: flex;
-    gap: 0.5rem;
-    z-index: 1000;
-    margin-top: 10px;
-
-    button {
-      background: #333;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      font-size: 1.2rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  }
 
   // Estilos de skeleton hasta cargar la vista
   .skeleton-wrapper {
