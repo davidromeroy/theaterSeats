@@ -535,7 +535,6 @@ export class SeatsPage {
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
-      //this.applyZoom();
       this.initializeZoomToFit();
       this.pinchToZoom();
     });
@@ -632,151 +631,83 @@ export class SeatsPage {
     (this.options.map as any).selectedSeats = [];
   }
 
-  private updateCartCounter(cart: any[]): void {
-    const countP = document.querySelector('.cart-count');
-    if (countP) {
-      const labels = cart.map(seat => seat.label).join(', ');
-      countP.textContent = `${cart.length} ticket(s): ${labels}`;
-    }
-  }
-
-  private removeSeatFromCart(index: { row: number, col: number }) {
-    const seat = this.sc.getSeat(index);
-
-    if (seat) {
-      const updatedSeat = {
-        ...seat,
-        status: 'available'
-      };
-      this.sc.setSeat(index, updatedSeat);
-
-      // Actualiza el carrito
-      this.cart = this.cart.filter(item => item.row !== index.row || item.col !== index.col);
-
-      // Elimina el asiento de los bloqueados
-      this.blockedSeats = this.blockedSeats.filter(
-        b => b.row !== index.row || b.col !== index.col
-      );
-
-      this.saveSeatsToStorage();
-      this.updateCartCounter(this.cart);
-    }
-  }
-
-
   private setupCartListener(sc: any) {
+    let reconstruyendoCart = false;
+
     sc.addEventListener('cartchange', () => {
       const cart = sc.getCart();
-      if (cart.length > 0 && !this.timerActivo) {
-        this.startTimer();
-      } else if (cart.length === 0 && this.timerActivo) {
-        this.stopTimer();
+
+      // ✅ Evita afectar el temporizador si estamos en medio de una reconstrucción visual
+      if (!reconstruyendoCart) {
+        if (cart.length > 0 && !this.timerActivo) this.startTimer();
+        if (cart.length === 0 && this.timerActivo) this.stopTimer();
       }
 
-      this.actualizarEstadoUsuario();
-
       let saldoTemp = this.initialUserAmount;
-      let asientosValidos: any[] = [];
-      let asientosExcedidos: any[] = [];
+      const detallesInvalidos: string[] = [];
+      const asientosValidos: any[] = [];
 
       for (const item of cart) {
-        const precio = this.getSeatPrice(item);
+        const row = item.index.row;
+        const col = item.index.col;
+        const platea = this.getPlateaDeAsiento(row, col);
+        const precio = this.getSeatPrice({ index: { row, col } });
+
         if (saldoTemp >= precio) {
           saldoTemp -= precio;
           asientosValidos.push(item);
         } else {
-          asientosExcedidos.push(item);
+          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
         }
       }
 
-      asientosExcedidos.forEach(seat => {
-        this.removeSeatFromCart(seat.index);
-      });
+      if (detallesInvalidos.length > 0) {
+        const alertaError = this.alertCtrl.create({
+          title: 'Puntos insuficientes',
+          message: `No se puede seleccionar el asiento:\n${detallesInvalidos.join('\n')}`,
+          buttons: [{ text: 'Aceptar' }]
+        });
+        alertaError.present();
 
-      if (asientosExcedidos.length > 0) {
-        alert('Algunos asientos fueron removidos por saldo insuficiente.');
+        // 🔐 Indicamos que estamos en proceso de reconstrucción visual
+        reconstruyendoCart = true;
+
+        // ✅ Limpiar y seleccionar solo válidos sin disparar stopTimer()
+        sc.clearCart();
+        (this.options.map as any).selectedSeats = asientosValidos.map(a => a.index);
+        this.refreshMap();
+
+        // ✅ Esperamos al siguiente frame y restablecemos la bandera
+        requestAnimationFrame(() => {
+          reconstruyendoCart = false;
+        });
       }
 
+      // Actualiza carrito
       this.cart = asientosValidos.map(item => ({
         row: item.index.row,
         col: item.index.col
       }));
 
       this.onSeatChange(this.cart);
-      // Actualiza contador visual
-      const labels = cart.map(seat => seat.label).join(', ');
-      const countP = document.querySelector('.cart-count');
-      if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
+
+      // Actualiza visual del contador
+      requestAnimationFrame(() => {
+        const labels = this.cart
+          .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
+          .join(', ');
+        const countP = document.querySelector('.cart-count');
+        if (countP) countP.textContent = `${this.cart.length} tickets:\n${labels}`;
+      });
+
+      this.actualizarEstadoUsuario();
     });
   }
 
 
 
-  // private setupCartListener(sc: any) {
-  //   sc.addEventListener('cartchange', () => {
-  //     const cart = sc.getCart();
-  //     if (cart.length > 0 && !this.timerActivo) {
-  //       this.startTimer();
-  //     }
-  //     if (cart.length === 0 && this.timerActivo) {
-  //       this.stopTimer();
-  //     }
-  //     for (let key in sc) {
-  //       if (typeof sc[key] === 'function') {
-  //         console.log(key);
-  //       } // solo imprime métodos } }
-  //     }
-  //     // Actualiza estado (saldo restante y colores)
-  //     this.actualizarEstadoUsuario();
-
-  //     // Lógica unificada: acumulativa + validación por platea + mensaje claro
-  //     let saldoTemp = this.initialUserAmount;
-  //     let mensajeSaldo = '';
-  //     let detallesInvalidos: string[] = [];
-
-  //     for (const item of cart) {
-  //       const row = item.index.row;
-  //       const col = item.index.col;
-  //       const platea = this.getPlateaDeAsiento(row, col);
-  //       const precio = this.getSeatPrice({ index: { row, col } });
-
-  //       if (saldoTemp >= precio) {
-  //         saldoTemp -= precio; // Pasa, descuenta del saldo temporal
-  //       } else {
-  //         // No alcanza saldo, guarda mensaje con detalles
-  //         detallesInvalidos.push(`Platea ${platea} ($${precio})`);
-  //       }
-  //     }
-
-  //     // Si hay errores y hay más de un asiento seleccionado
-  //     if (detallesInvalidos.length > 0 && cart.length > 1) {
-  //       mensajeSaldo = `No tienes puntos suficiente para reservar más de un asiento`;
-  //     }
-
-  //     if (mensajeSaldo) {
-  //       alert(mensajeSaldo);
-  //       sc.clearCart();
-  //       this.cart = [];
-  //       return;
-  //     }
-
-  //     // Actualiza el carrito en memoria y en storage
-  //     this.cart = cart.map((item: any) => ({
-  //       row: item.index.row,
-  //       col: item.index.col
-  //     }));
-
-  //     // Actualiza bloqueos
-  //     this.onSeatChange(this.cart);
-
-  //     // Actualiza contador visual
-  //     const labels = cart.map(seat => seat.label).join(', ');
-  //     const countP = document.querySelector('.cart-count');
-  //     if (countP) countP.textContent = `${cart.length} tickets: \n ${labels}`;
-  //   });
 
 
-  // }
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
@@ -796,7 +727,12 @@ export class SeatsPage {
 
 
       if (!cart || cart.length === 0) {
-        alert('No hay asientos seleccionados.');
+        const alertaError = this.alertCtrl.create({
+          title: 'Asientos no seleccionados',
+          message: 'No hay asientos seleccionados, Porfavor seleccione un asiento',
+          buttons: [{ text: 'Aceptar' }]
+        })
+        alertaError.present();
         return;
       }
       const qrDataPromises = cart.map(async (seat) => {
@@ -903,26 +839,6 @@ export class SeatsPage {
 
   }
 
-  zoomIn() {
-    this.zoomLevel = Math.min(this.zoomLevel + 0.1, 1.0);
-    console.log(this.zoomLevel)
-    this.applyZoom();
-  }
-
-  zoomOut() {
-    this.zoomLevel = Math.max(this.zoomLevel - 0.1, 0.3);
-    console.log(this.zoomLevel)
-    this.applyZoom();
-  }
-
-  applyZoom() {
-    const mapInner = document.querySelector('.sc-map') as HTMLElement;
-    if (mapInner) {
-      //mapInner.style.transform = `scale(${this.zoomLevel})`;
-      mapInner.style.transform = `translate(${this.translateX}px,${this.translateY}px) scale(${this.zoomLevel})`;
-      mapInner.style.transformOrigin = '0 0';
-    }
-  }
 
   initializeZoomToFit() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
