@@ -77,6 +77,7 @@ export class SeatsPage {
   startX = 0;
   startY = 0;
   private hammer: any;
+  presionado: boolean = false;
 
   constructor(
     public navCtrl: NavController,
@@ -85,7 +86,11 @@ export class SeatsPage {
     private platform: Platform
   ) { }
 
-
+  toggleIcon(value: boolean) {
+    //this.presionado = !this.presionado;
+    this.presionado = value;
+    this.initializeZoomToFit(value);
+  }
 
   getSession() {
     let sendId = sessionStorage.getItem('sendId');
@@ -535,7 +540,7 @@ export class SeatsPage {
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
-      this.initializeZoomToFit();
+      this.initializeZoomToFit(false);
       this.pinchToZoom();
     });
   }
@@ -840,7 +845,7 @@ export class SeatsPage {
   }
 
 
-  initializeZoomToFit() {
+  initializeZoomToFit(zoomIn: boolean = false) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
     const containerRect = container.getBoundingClientRect();
@@ -849,7 +854,10 @@ export class SeatsPage {
     const scaleY = containerRect.height / map.offsetHeight;
 
     // Escala mínima para que el mapa completo entre en el contenedor
-    this.zoomLevel = Math.min(scaleX, scaleY, 1);
+    let baseZoom = Math.min(scaleX, scaleY, 1);
+
+    // Si zoomIn es true, aumenta el zoom al doble del ajuste automático (máximo 2)
+    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
     this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
 
     // Centrado horizontal y vertical
@@ -858,7 +866,6 @@ export class SeatsPage {
 
     this.translateX = (containerRect.width - scaledMapWidth) / 2;
     this.translateY = (containerRect.height - scaledMapHeight) / 2;
-
 
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
