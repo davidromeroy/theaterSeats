@@ -856,7 +856,6 @@ export class SeatsPage {
     // Escala mínima para que el mapa completo entre en el contenedor
     let baseZoom = Math.min(scaleX, scaleY, 1);
 
-    // Si zoomIn es true, aumenta el zoom al doble del ajuste automático (máximo 2)
     this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
     this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
 
@@ -865,7 +864,9 @@ export class SeatsPage {
     const scaledMapHeight = map.offsetHeight * this.zoomLevel;
 
     this.translateX = (containerRect.width - scaledMapWidth) / 2;
-    this.translateY = (containerRect.height - scaledMapHeight) / 2;
+
+    // Si se hace zoom, se baja para que el escenario sea visible
+    this.translateY = zoomIn ? (containerRect.height - scaledMapHeight) / 2 - 50 : (containerRect.height - scaledMapHeight) / 2;
 
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
