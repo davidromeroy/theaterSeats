@@ -1,0 +1,36 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AsientosProvider {
+  private apiUrl = 'http://localhost/appdelportal/wp-json/delportal/v1';
+
+  constructor(private http: HttpClient) {
+  }
+
+  getEstadoAsientos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/estado`);
+  }
+
+  // Actualizar estado de un asiento
+  actualizarAsiento(
+    seat: { row: number, col: number },
+    estado: string,
+    fechas: any,
+    userid: string
+  ): Observable<any> {
+    const body = {
+      row: seat.row,
+      col: seat.col,
+      estado: estado,
+      userid: userid,
+      fecha_reserva: fechas.fecha_reserva || null,
+      fecha_fin_reserva: fechas.fecha_fin_reserva || null,
+      fecha_canje: fechas.fecha_canje || null,
+      fecha_validacion: fechas.fecha_validacion || null
+    };
+    return this.http.post(`${this.apiUrl}/actualizar`, body);
+  }
+
+}

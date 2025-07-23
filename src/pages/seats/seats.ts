@@ -2,6 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
+import { AsientosProvider } from '../../providers/asientos/asientos';
 
 
 declare var require: any;
@@ -83,7 +84,8 @@ export class SeatsPage {
     public navCtrl: NavController,
     public navParams: NavParams,
     public alertCtrl: AlertController,
-    private platform: Platform
+    private platform: Platform,
+    private asientosProvider: AsientosProvider
   ) { }
 
   toggleIcon(value: boolean) {
@@ -341,6 +343,42 @@ export class SeatsPage {
     this.soldSeats = JSON.parse(localStorage.getItem('soldSeats') || '[]');
     this.refreshMap();
   }
+
+  loadSeatsFromDB() {
+    this.asientosProvider.getEstadoAsientos().subscribe(data => {
+      this.blockedSeats = data
+        .filter(seat => seat.estado === 'Reservado')
+        .map(seat => ({
+          row: seat.row,
+          col: seat.col,
+          expires: new Date(seat.fecha_fin_reserva).getTime(),
+          sesionId: seat.userid ? seat.userid.toString() : ''
+        }));
+      this.soldSeats = data
+        .filter(seat => seat.estado === 'Ocupado')
+        .map(seat => ({
+          row: seat.row,
+          col: seat.col,
+          label: seat.asiento
+        }));
+      console.log('Asientos cargados desde la base de datos:', this.blockedSeats, this.soldSeats);
+      this.refreshMap();
+    });
+  }
+
+  actualizarAsientoEnBD(seat: { row: number, col: number }, estado: string, fechas: any) {
+    const userid = this.getSession();
+    return this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).toPromise();
+    // this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).subscribe(
+    //   response => {
+    //     console.log('Asiento actualizado:', response);
+    //   },
+    //   error => {
+    //     console.error('Error al actualizar el asiento:', error);
+    //   }
+    // );
+  }
+
   actualizarEstadoUsuarioPorBloqueos() {
     // 1. Encuentra todos los asientos bloqueados para ESTA sesión y aún vigentes
     const miSesion = this.getSession();
@@ -461,21 +499,29 @@ export class SeatsPage {
 
     // Añade nuevos bloqueos
     selectedSeats.forEach(seat => {
-      const alreadyBlocked = this.blockedSeats.some(
-        b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-      );
-      const alreadySold = this.soldSeats.some(
-        s => s.row === seat.row && s.col === seat.col
-      );
-      if (!alreadyBlocked && !alreadySold) {
-        this.blockedSeats.push({
-          row: seat.row,
-          col: seat.col,
-          expires: Date.now() + this.timeLeft * 1000,
-          sesionId: miSesion
-        });
-      }
+      const now = new Date();
+      const fechaFinReserva = new Date(now.getTime() + this.timeLeft * 1000); // Expira en timeLeft segundos
+      this.actualizarAsientoEnBD(seat, 'Reservado', {
+        fecha_reserva: now.toISOString().slice(0, 19).replace('T', ' '),
+        fecha_fin_reserva: fechaFinReserva.toISOString().slice(0, 19).replace('T', ' ')
+      });
     });
+    // selectedSeats.forEach(seat => {
+    //   const alreadyBlocked = this.blockedSeats.some(
+    //     b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+    //   );
+    //   const alreadySold = this.soldSeats.some(
+    //     s => s.row === seat.row && s.col === seat.col
+    //   );
+    //   if (!alreadyBlocked && !alreadySold) {
+    //     this.blockedSeats.push({
+    //       row: seat.row,
+    //       col: seat.col,
+    //       expires: Date.now() + this.timeLeft * 1000,
+    //       sesionId: miSesion
+    //     });
+    //   }
+    // });
 
     // Actualiza tu carrito
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
@@ -777,6 +823,11 @@ export class SeatsPage {
           handler: () => {
             // 🔁 Recorrer los asientos del carrito
             this.cart.forEach(seat => {
+              const now = new Date();
+              // Actualizar el estado del asiento en la base de datos
+              this.actualizarAsientoEnBD(seat, 'Ocupado', {
+                fecha_canje: now.toISOString().slice(0, 19).replace('T', ' ')
+              });
               // 🔍 Buscar el elemento en el DOM por ID
               const el = document.querySelector(`#seat-${seat.row}-${seat.col}`);
               if (el) {
@@ -819,11 +870,13 @@ export class SeatsPage {
 
 
   ionViewDidLoad() {
-    this.loadSeatsFromStorage();
+    this.loadSeatsFromDB();
     setInterval(() => this.clearExpiredBlocks(), 1000);
-    window.addEventListener('storage', () => {
-      this.loadSeatsFromStorage();
-    });
+    // this.loadSeatsFromStorage();
+    // setInterval(() => this.clearExpiredBlocks(), 1000);
+    // window.addEventListener('storage', () => {
+    //   this.loadSeatsFromStorage();
+    // });
   }
 
   private initSeatChart(container: HTMLElement) {
