@@ -3,7 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 import { AsientosProvider } from '../../providers/asientos/asientos';
-
+import { DateTime } from 'luxon';
 
 declare var require: any;
 const Seatchart = require('seatchart');
@@ -345,38 +345,60 @@ export class SeatsPage {
   }
 
   loadSeatsFromDB() {
-    this.asientosProvider.getEstadoAsientos().subscribe(data => {
-      this.blockedSeats = data
-        .filter(seat => seat.estado === 'Reservado')
-        .map(seat => ({
-          row: seat.row,
-          col: seat.col,
-          expires: new Date(seat.fecha_fin_reserva).getTime(),
-          sesionId: seat.userid ? seat.userid.toString() : ''
-        }));
-      this.soldSeats = data
-        .filter(seat => seat.estado === 'Ocupado')
-        .map(seat => ({
-          row: seat.row,
-          col: seat.col,
-          label: seat.asiento
-        }));
-      console.log('Asientos cargados desde la base de datos:', this.blockedSeats, this.soldSeats);
-      this.refreshMap();
-    });
+    console.log('[DEBUG] Llamando getEstadoAsientos API...');
+    this.asientosProvider.getEstadoAsientos().subscribe(
+      data => {
+        console.log('[DEBUG] Respuesta recibida del API:', data);
+        this.blockedSeats = data
+          .filter(seat => seat.estado === 'Reservado')
+          .map(seat => ({
+            row: seat.row,
+            col: seat.col,
+            expires: new Date(seat.fecha_fin_reserva).getTime(),
+            sesionId: seat.userid ? seat.userid.toString() : ''
+          }));
+        console.log('[DEBUG] blockedSeats después de filtrar:', this.blockedSeats);
+        this.soldSeats = data
+          .filter(seat => seat.estado === 'Ocupado')
+          .map(seat => ({
+            row: seat.row,
+            col: seat.col,
+            label: seat.asiento,
+            platea: seat.platea,
+            canjeado: 1
+          }));
+        console.log('[DEBUG] DATA: ', data);
+        console.log('[DEBUG] soldSeats después de filtrar:', this.soldSeats);
+        this.refreshMap();
+      },
+      error => {
+        console.error('[ERROR] Error en getEstadoAsientos:', error);
+      }
+    );
   }
 
-  actualizarAsientoEnBD(seat: { row: number, col: number }, estado: string, fechas: any) {
+  actualizarAsientoEnBD(seat: { row: number, col: number }, asiento: string, platea: string, estado: string, fechas: any, canjeada: number = 0) {
     const userid = this.getSession();
-    return this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).toPromise();
-    // this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).subscribe(
-    //   response => {
-    //     console.log('Asiento actualizado:', response);
-    //   },
-    //   error => {
-    //     console.error('Error al actualizar el asiento:', error);
-    //   }
-    // );
+    console.log('[DEBUG] Enviando actualización de asiento al API:', {
+      row: seat.row,
+      col: seat.col,
+      asiento,
+      platea,
+      estado,
+      fechas,
+      userid,
+      canjeada
+    });
+    return this.asientosProvider.actualizarAsiento({ row: seat.row, col: seat.col }, asiento, platea, estado, fechas, userid, canjeada)
+      .toPromise()
+      .then(response => {
+        console.log('[DEBUG] Respuesta de actualizarAsiento:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('[ERROR] Error en actualizarAsiento:', error);
+        throw error;
+      });
   }
 
   actualizarEstadoUsuarioPorBloqueos() {
@@ -432,9 +454,15 @@ export class SeatsPage {
 
   // Solo disables de layout + vendidos
   getDisabledSeats() {
+    const vendidossanitizados = this.soldSeats.map(s => ({ row: s.row, col: s.col }));
+    const expirados = this.blockedSeats
+      .filter(b => b.expires <= Date.now())
+      .map(b => ({ row: b.row, col: b.col }));
+
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
+      ...vendidossanitizados,
+      ...expirados
     ];
   }
 
@@ -486,48 +514,30 @@ export class SeatsPage {
   }
 
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
-    const miSesion = this.getSession();
-
-    // Elimina bloqueos de mi sesión que ya no están seleccionados
-    this.blockedSeats = this.blockedSeats.filter(blocked => {
-      if (blocked.sesionId === miSesion) {
-        // Solo conserva los aún seleccionados
-        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
-      }
-      return blocked.expires > Date.now();
-    });
 
     // Añade nuevos bloqueos
     selectedSeats.forEach(seat => {
-      const now = new Date();
-      const fechaFinReserva = new Date(now.getTime() + this.timeLeft * 1000); // Expira en timeLeft segundos
-      this.actualizarAsientoEnBD(seat, 'Reservado', {
-        fecha_reserva: now.toISOString().slice(0, 19).replace('T', ' '),
-        fecha_fin_reserva: fechaFinReserva.toISOString().slice(0, 19).replace('T', ' ')
-      });
+      const now = DateTime.now().setZone('America/Guayaquil');
+      const fechaFinReserva = now.plus({ seconds: this.timeLeft });
+      const platea = this.getPlateaDeAsiento(seat.row, seat.col);
+      this.actualizarAsientoEnBD(
+        seat,
+        this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }),
+        platea,
+        'Reservado',
+        {
+          fecha_reserva: now.toFormat('yyyy-MM-dd HH:mm:ss'),
+          fecha_fin_reserva: fechaFinReserva.toFormat('yyyy-MM-dd HH:mm:ss'),
+        },
+        0
+      );
     });
-    // selectedSeats.forEach(seat => {
-    //   const alreadyBlocked = this.blockedSeats.some(
-    //     b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-    //   );
-    //   const alreadySold = this.soldSeats.some(
-    //     s => s.row === seat.row && s.col === seat.col
-    //   );
-    //   if (!alreadyBlocked && !alreadySold) {
-    //     this.blockedSeats.push({
-    //       row: seat.row,
-    //       col: seat.col,
-    //       expires: Date.now() + this.timeLeft * 1000,
-    //       sesionId: miSesion
-    //     });
-    //   }
-    // });
+
 
     // Actualiza tu carrito
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
 
-    // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
-    this.saveSeatsToStorage();
+
   }
 
   private insertStage(container: HTMLElement) {
@@ -825,9 +835,16 @@ export class SeatsPage {
             this.cart.forEach(seat => {
               const now = new Date();
               // Actualizar el estado del asiento en la base de datos
-              this.actualizarAsientoEnBD(seat, 'Ocupado', {
-                fecha_canje: now.toISOString().slice(0, 19).replace('T', ' ')
-              });
+              this.actualizarAsientoEnBD(
+                seat,
+                this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }),
+                this.getPlateaDeAsiento(seat.row, seat.col),
+                'Ocupado',
+                {
+                  fecha_canje: now.toISOString().slice(0, 19).replace('T', ' ')
+                },
+                0
+              );
               // 🔍 Buscar el elemento en el DOM por ID
               const el = document.querySelector(`#seat-${seat.row}-${seat.col}`);
               if (el) {
@@ -869,15 +886,15 @@ export class SeatsPage {
   }
 
 
-  ionViewDidLoad() {
-    this.loadSeatsFromDB();
-    setInterval(() => this.clearExpiredBlocks(), 1000);
-    // this.loadSeatsFromStorage();
-    // setInterval(() => this.clearExpiredBlocks(), 1000);
-    // window.addEventListener('storage', () => {
-    //   this.loadSeatsFromStorage();
-    // });
-  }
+  // ionViewDidLoad() {
+  //   this.loadSeatsFromDB();
+  //   setInterval(() => this.clearExpiredBlocks(), 1000);
+  //   // this.loadSeatsFromStorage();
+  //   // setInterval(() => this.clearExpiredBlocks(), 1000);
+  //   // window.addEventListener('storage', () => {
+  //   //   this.loadSeatsFromStorage();
+  //   // });
+  // }
 
   private initSeatChart(container: HTMLElement) {
     this.sc = new Seatchart(container, this.options);
@@ -1035,6 +1052,8 @@ export class SeatsPage {
 
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
+      this.loadSeatsFromDB();
+
 
       this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
 
