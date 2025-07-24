@@ -16,9 +16,12 @@ export class AsientosProvider {
   // Actualizar estado de un asiento
   actualizarAsiento(
     seat: { row: number, col: number },
+    asiento: string,
+    platea: string,
     estado: string,
     fechas: any,
-    userid: string
+    userid: string,
+    canjeada: number = 0
   ): Observable<any> {
     const body = {
       row: seat.row,
@@ -28,7 +31,10 @@ export class AsientosProvider {
       fecha_reserva: fechas.fecha_reserva || null,
       fecha_fin_reserva: fechas.fecha_fin_reserva || null,
       fecha_canje: fechas.fecha_canje || null,
-      fecha_validacion: fechas.fecha_validacion || null
+      fecha_validacion: fechas.fecha_validacion || null,
+      platea: platea || null,
+      asiento: asiento || null,
+      canjeada: typeof canjeada !== 'undefined' ? canjeada : 0
     };
     return this.http.post(`${this.apiUrl}/actualizar`, body);
   }
