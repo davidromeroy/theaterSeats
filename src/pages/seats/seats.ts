@@ -93,6 +93,9 @@ export class SeatsPage {
   startY = 0;
   private hammer: any;
   presionado: boolean = false;
+  precioPlateaA: number = 40;
+  precioPlateaB: number = 30;
+  precioPlateaC: number = 20;
 
   constructor(
     public navCtrl: NavController,
@@ -635,7 +638,9 @@ export class SeatsPage {
     const cart = this.sc.getCart(); // Asientos seleccionados
     const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
     const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
-
+    this.precioPlateaA = saldoRestante >= 40 ? 40 : 0;
+    this.precioPlateaB = saldoRestante >= 30 ? 30 : 0;
+    this.precioPlateaC = saldoRestante >= 20 ? 20 : 0;
     this.userAmount = saldoRestante;
   }
 

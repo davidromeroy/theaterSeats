@@ -272,6 +272,7 @@ page-seats {
       transform: scale(0.9);
     }
   }
+
   .sc-seat.sc-seat-available:hover {
     cursor: pointer;
     opacity: 1;
@@ -288,22 +289,28 @@ page-seats {
     color: white;
     opacity: 1;
   }
- .timer {
-  font-size: 2.3rem;
-  font-weight: bold;
-  color: #222;
-  transition: color 0.3s;
-}
 
-.timer-critical {
-  color: #e53935 !important;
-  animation: blink 0.9s step-start 0s infinite;
-}
+  .timer {
+    font-size: 2.3rem;
+    font-weight: bold;
+    color: #222;
+    transition: color 0.3s;
+  }
 
-@keyframes blink {
-  50% { opacity: 0.2; }
-  100% { opacity: 1; }
-}
+  .timer-critical {
+    color: #e53935 !important;
+    animation: blink 0.9s step-start 0s infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0.2;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
 
 
   //ocupados
@@ -311,15 +318,15 @@ page-seats {
   .sc-seat-reserved {
     color: white;
     background-color: #a2a2a2;
-     cursor: not-allowed;
+    cursor: not-allowed;
   }
 
-//Nuevo: clase para asientos temporales
-.temporal {
-  background-color: orange !important;
-  cursor: not-allowed;
-  pointer-events: none;
-}
+  //Nuevo: clase para asientos temporales
+  .temporal {
+    background-color: orange !important;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 
 
 
@@ -400,8 +407,10 @@ page-seats {
     }
 
   }
-  .budget-label{
+
+  .budget-label {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
   }

@@ -32,7 +32,8 @@
   <div [hidden]="loading">
     <!--Dinero disponible del usuario -->
     <div class="budget-label">
-      <p><strong>Puntos disponibles:</strong> ${{ userAmount }}</p>
+      <p><strong>Puntos disponibles:</strong> {{ userAmount }}</p>
+      <p>Puedes escoger hasta {{ precioPlateaA }} asientos en {{ plateas.PlateaA}} </p>
       <div *ngIf="timerActivo" class="timer" [ngClass]="{'timer-critical': isTimeCritical()}">
         {{ formatTimeLeft() }}
       </div>
