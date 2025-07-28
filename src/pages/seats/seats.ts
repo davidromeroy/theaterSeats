@@ -106,7 +106,7 @@ export class SeatsPage {
   maxB: number = 0;
   maxC: number = 0;
   maxEntradasPorPlatea: { A: any; B: any; C: any; };
-  plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
+  // plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
 
   constructor(
     public navCtrl: NavController,
@@ -258,7 +258,8 @@ export class SeatsPage {
 
   getPlateas(platea) {
     // Platea A: bloque central de filas medias
-    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19])
+    .map(asiento => ({ ...asiento, type: 'Platea A' }));
 
     //Platea B:
     const plateaB = [
@@ -269,6 +270,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 6, 'left'),
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 0, 'right'),
       ...this.generateSideSeats([20, 21], 5, 0, 'both'),]
+      .map(asiento => ({ ...asiento, type: 'Platea B' }));
 
     // Platea C:
     const plateaC = [
@@ -279,7 +281,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 4, 'right'),       // laterales en filas 15–19
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 0, 'left'),       // laterales en filas 15–19
       ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])  //  centro en filas altas W–R
-    ];
+    ].map(asiento => ({ ...asiento, type: 'Platea C' }));
 
     switch (platea) {
       case 'A':
@@ -293,7 +295,24 @@ export class SeatsPage {
 
       default:
         console.log("Asiento Fuera de Rango");
-        break;
+        const asientos = [
+          ...plateaA,
+          ...plateaB,
+          ...plateaC
+        ];
+        const output = {
+          rows: 22,
+          cols: 64,
+          types: {
+            "Platea A": "#42445A",
+            "Platea B": "#5B67EC",
+            "Platea C": "#15A66F"
+          },
+          seats: asientos  // Aquí va tu array de 952 objetos
+        };
+
+        // return JSON.stringify(output, null, 2);
+        return [];
     }
   }
 
@@ -742,13 +761,13 @@ export class SeatsPage {
         const platea = this.getPlateaDeAsiento(row, col);
         const precio = this.getSeatPrice({ index: { row, col } });
 
-        if (saldoTemp >= precio) {
-          saldoTemp -= precio;
-          asientosValidos.push(item);
-        } else {
-          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
-        }
+      if (saldoTemp >= precio) {
+        saldoTemp -= precio;
+        asientosValidos.push(item);
+      } else {
+        detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
       }
+    }
 
       if (detallesInvalidos.length > 0) {
         const alertaError = this.alertCtrl.create({
@@ -1140,20 +1159,6 @@ initializeZoomToFit(zoomIn: boolean = false) {
     this.plateaActiva = nuevaPlatea;
   }
 
-  // Nuevo: Función que devuelve la clase según la platea activa
-  get clasePlateaActiva(): string {
-    switch (this.plateaActiva) {
-      case 'A': return 'plateaA';
-      case 'B': return 'plateaB';
-      case 'C': return 'plateaC';
-      default: return '';
-    }
-  }
-
-  cambiarPlatea(nuevaPlatea: string) {
-    this.plateaActiva = nuevaPlatea;
-  }
-
 
   ionViewDidEnter() {
 
@@ -1173,6 +1178,7 @@ initializeZoomToFit(zoomIn: boolean = false) {
       this.initSeatChart(container); // retorna el chart
       // });
     });
+
   }
 
 }
