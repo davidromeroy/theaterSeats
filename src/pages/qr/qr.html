@@ -6,11 +6,17 @@
 
 <ion-content padding>
   <div class="qr-wrapper">
+    <div style="margin-bottom: 20px; text-align: right;">
+      <button ion-button color="primary" (click)="descargarQr()">
+        <ion-icon name="download"></ion-icon>
+        Descargar en PDF
+      </button>
+    </div>
 
     <!-- Vista para múltiples boletos -->
     <ion-slides *ngIf="qrBoletos.length > 1" pager="true">
-      <ion-slide *ngFor="let item of qrBoletos">
-        <div class="ticket-card">
+      <ion-slide *ngFor="let item of qrBoletos; let i = index">
+        <div class="ticket-card" [attr.id]="'ticketCard'+i">
           <div class="ticket-header" [ngClass]="item.claseHeader">
             <div class="header-content">
               <div class="platea-info">
@@ -28,15 +34,12 @@
               </div>
             </div>
           </div>
-
           <div class="funcion-nombre">
             <span>Cumbia Divina</span>
           </div>
-
           <div class="ticket-nombre">
             <span>{{ usuarioNombre }}</span>
           </div>
-
           <div class="ticket-body">
             <img [src]="item.qrImage" [alt]="item.label" />
             <p>
@@ -48,7 +51,6 @@
               <span>Duración: 1h 30min</span>
             </div>
           </div>
-
           <div class="ticket-footer">
             <div class="station">
               <ion-icon name="md-pin"></ion-icon>
@@ -62,7 +64,7 @@
     </ion-slides>
 
     <!-- Vista para un solo boleto -->
-    <div *ngIf="qrBoletos.length === 1" class="ticket-card single-qr">
+    <div *ngIf="qrBoletos.length === 1" class="ticket-card single-qr" id="ticketCardSingle">
       <div class="ticket-header" [ngClass]="qrBoletos[0].claseHeader">
         <div class="header-content">
           <div class="platea-info">
@@ -80,15 +82,12 @@
           </div>
         </div>
       </div>
-
       <div class="funcion-nombre">
         <span>Cumbia Divina</span>
       </div>
-
       <div class="ticket-nombre">
         <span>{{ usuarioNombre }}</span>
       </div>
-
       <div class="ticket-body">
         <img [src]="qrBoletos[0].qrImage" [alt]="qrBoletos[0].label" />
         <p>
@@ -100,7 +99,6 @@
           <span>Duración: 1h 30min</span>
         </div>
       </div>
-
       <div class="ticket-footer">
         <div class="station">
           <ion-icon name="md-pin"></ion-icon>
