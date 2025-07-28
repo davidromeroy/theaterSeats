@@ -3,7 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
 import { AsientosProvider } from '../../providers/asientos/asientos';
-import { DateTime } from 'luxon';
+
 
 declare var require: any;
 const Seatchart = require('seatchart');
@@ -18,6 +18,7 @@ const seatLetters = [
 
 const rows = seatLetters.length; // 22
 const columns = 64; // o 60, dependiendo del espacio que quieras
+const now = new Date();
 
 const layout = [
   { active: [0, 37, 0], disabled: [4, 4], shiftLeft: 17 },      //W
@@ -50,6 +51,19 @@ const layout = [
   templateUrl: 'seats.html',
 })
 export class SeatsPage {
+  // Devuelve la fecha en formato YYYY-MM-DD HH:mm:ss para Guayaquil (GMT-5)
+  private getGuayaquilDateString(date: Date): string {
+    const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+    // Offset de Guayaquil: -5 horas
+    const guayaquilTime = new Date(utc - (5 * 60 * 60000));
+    const yyyy = guayaquilTime.getFullYear();
+    const mm = ('0' + (guayaquilTime.getMonth() + 1)).slice(-2);
+    const dd = ('0' + guayaquilTime.getDate()).slice(-2);
+    const hh = ('0' + guayaquilTime.getHours()).slice(-2);
+    const min = ('0' + guayaquilTime.getMinutes()).slice(-2);
+    const ss = ('0' + guayaquilTime.getSeconds()).slice(-2);
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+  }
   private sc: any;
   loading = true;
   timer: any = null;
@@ -361,15 +375,14 @@ export class SeatsPage {
         this.soldSeats = data
           .filter(seat => seat.estado === 'Ocupado')
           .map(seat => ({
-            row: seat.row,
-            col: seat.col,
-            label: seat.asiento,
-            platea: seat.platea,
-            canjeado: 1
+            row: Number(seat.row),
+            col: Number(seat.col),
+            label: seat.asiento
           }));
-        console.log('[DEBUG] DATA: ', data);
         console.log('[DEBUG] soldSeats después de filtrar:', this.soldSeats);
         this.refreshMap();
+        // Oculta el skeleton solo cuando los datos del API están listos
+        this.loading = false;
       },
       error => {
         console.error('[ERROR] Error en getEstadoAsientos:', error);
@@ -399,6 +412,14 @@ export class SeatsPage {
         console.error('[ERROR] Error en actualizarAsiento:', error);
         throw error;
       });
+    // this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).subscribe(
+    //   response => {
+    //     console.log('Asiento actualizado:', response);
+    //   },
+    //   error => {
+    //     console.error('Error al actualizar el asiento:', error);
+    //   }
+    // );
   }
 
   actualizarEstadoUsuarioPorBloqueos() {
@@ -443,7 +464,7 @@ export class SeatsPage {
   isblocked(row: number, col: number): boolean {
     const miSesion = this.getSession();
     return this.blockedSeats.some(
-      b => row === b.row && col === b.col && b.expires > Date.now() && b.sesionId !== miSesion
+      b => row === b.row && col === b.col && b.expires > Date.now()
     );
   }
   isSold(row: number, col: number): boolean {
@@ -454,15 +475,9 @@ export class SeatsPage {
 
   // Solo disables de layout + vendidos
   getDisabledSeats() {
-    const vendidossanitizados = this.soldSeats.map(s => ({ row: s.row, col: s.col }));
-    const expirados = this.blockedSeats
-      .filter(b => b.expires <= Date.now())
-      .map(b => ({ row: b.row, col: b.col }));
-
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      ...vendidossanitizados,
-      ...expirados
+      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
     ];
   }
 
@@ -497,6 +512,8 @@ export class SeatsPage {
 
   getReservedSeats() {
     // Solo devolver los asientos vendidos confirmados
+    console.log('[DEBUG] Obteniendo asientos reservados...', this.soldSeats);
+
     return this.soldSeats.map(s => ({ row: s.row, col: s.col }));
   }
 
@@ -514,11 +531,21 @@ export class SeatsPage {
   }
 
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
+    const miSesion = this.getSession();
+
+    // Elimina bloqueos de mi sesión que ya no están seleccionados
+    this.blockedSeats = this.blockedSeats.filter(blocked => {
+      if (blocked.sesionId === miSesion) {
+        // Solo conserva los aún seleccionados
+        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
+      }
+      return blocked.expires > Date.now();
+    });
 
     // Añade nuevos bloqueos
     selectedSeats.forEach(seat => {
-      const now = DateTime.now().setZone('America/Guayaquil');
-      const fechaFinReserva = now.plus({ seconds: this.timeLeft });
+      const now = new Date();
+      const fechaFinReserva = new Date(now.getTime() + this.timeLeft * 1000); // Expira en timeLeft segundos
       const platea = this.getPlateaDeAsiento(seat.row, seat.col);
       this.actualizarAsientoEnBD(
         seat,
@@ -526,18 +553,34 @@ export class SeatsPage {
         platea,
         'Reservado',
         {
-          fecha_reserva: now.toFormat('yyyy-MM-dd HH:mm:ss'),
-          fecha_fin_reserva: fechaFinReserva.toFormat('yyyy-MM-dd HH:mm:ss'),
+          fecha_reserva: this.getGuayaquilDateString(now),
+          fecha_fin_reserva: this.getGuayaquilDateString(fechaFinReserva)
         },
         0
       );
     });
-
+    // selectedSeats.forEach(seat => {
+    //   const alreadyBlocked = this.blockedSeats.some(
+    //     b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
+    //   );
+    //   const alreadySold = this.soldSeats.some(
+    //     s => s.row === seat.row && s.col === seat.col
+    //   );
+    //   if (!alreadyBlocked && !alreadySold) {
+    //     this.blockedSeats.push({
+    //       row: seat.row,
+    //       col: seat.col,
+    //       expires: Date.now() + this.timeLeft * 1000,
+    //       sesionId: miSesion
+    //     });
+    //   }
+    // });
 
     // Actualiza tu carrito
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
 
-
+    // Solo actualiza el almacenamiento, NO reinicies el mapa aquí
+    this.saveSeatsToStorage();
   }
 
   private insertStage(container: HTMLElement) {
@@ -647,7 +690,7 @@ export class SeatsPage {
 
   startTimer() {
     this.stopTimer(); // Evita dos timers simultáneos
-    this.timeLeft = 400;
+    this.timeLeft = 60;
     this.timerActivo = true;
     this.timer = setInterval(() => {
       this.timeLeft--;
@@ -841,7 +884,7 @@ export class SeatsPage {
                 this.getPlateaDeAsiento(seat.row, seat.col),
                 'Ocupado',
                 {
-                  fecha_canje: now.toISOString().slice(0, 19).replace('T', ' ')
+                  fecha_canje: this.getGuayaquilDateString(now)
                 },
                 0
               );
@@ -886,15 +929,15 @@ export class SeatsPage {
   }
 
 
-  // ionViewDidLoad() {
-  //   this.loadSeatsFromDB();
-  //   setInterval(() => this.clearExpiredBlocks(), 1000);
-  //   // this.loadSeatsFromStorage();
-  //   // setInterval(() => this.clearExpiredBlocks(), 1000);
-  //   // window.addEventListener('storage', () => {
-  //   //   this.loadSeatsFromStorage();
-  //   // });
-  // }
+  ionViewDidLoad() {
+    this.loadSeatsFromDB();
+    setInterval(() => this.clearExpiredBlocks(), 1000);
+    // this.loadSeatsFromStorage();
+    // setInterval(() => this.clearExpiredBlocks(), 1000);
+    // window.addEventListener('storage', () => {
+    //   this.loadSeatsFromStorage();
+    // });
+  }
 
   private initSeatChart(container: HTMLElement) {
     this.sc = new Seatchart(container, this.options);
@@ -1052,18 +1095,13 @@ export class SeatsPage {
 
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
-      this.loadSeatsFromDB();
-
 
       this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
 
       const container = this.seatContainer.nativeElement;
       this.initSeatChart(container); // retorna el chart
-
-      this.loading = false; //  ocultar skeleton
       // });
     });
-
   }
 
 }
