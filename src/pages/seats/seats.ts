@@ -5,6 +5,7 @@ import { AlertController } from 'ionic-angular';
 import { AsientosProvider } from '../../providers/asientos/asientos';
 
 
+
 declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
