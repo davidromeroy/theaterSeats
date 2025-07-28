@@ -20,7 +20,7 @@ export class AsientosProvider {
     platea: string,
     estado: string,
     fechas: any,
-    userid: string,
+    userid: number,
     canjeada: number = 0
   ): Observable<any> {
     const body = {
