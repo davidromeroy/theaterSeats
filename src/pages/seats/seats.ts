@@ -77,7 +77,7 @@ export class SeatsPage {
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
 
-  blockedSeats: { row: number, col: number, expires: number, sesionId: string }[] = [];
+  blockedSeats: { row: number, col: number, expires: number, userId: number }[] = [];
   soldSeats: { row: number, col: number }[] = [];
   plateas: { [key: string]: { row: number, col: number }[] } = {};
 
@@ -106,15 +106,6 @@ export class SeatsPage {
     //this.presionado = !this.presionado;
     this.presionado = value;
     this.initializeZoomToFit(value);
-  }
-
-  getSession() {
-    let sendId = sessionStorage.getItem('sendId');
-    if (!sendId) {
-      sendId = Math.random().toString(36).substr(2, 9) + Date.now();
-      sessionStorage.setItem('sendId', sendId);
-    }
-    return sendId;
   }
 
   // Funciones para general los asientos desde el Layout
@@ -364,12 +355,12 @@ export class SeatsPage {
       data => {
         console.log('[DEBUG] Respuesta recibida del API:', data);
         this.blockedSeats = data
-          .filter(seat => seat.estado === 'Reservado')
+          .filter(seat => seat.estado === 'Reservado' && seat.fecha_fin_reserva && new Date(seat.fecha_fin_reserva) > now)
           .map(seat => ({
             row: seat.row,
             col: seat.col,
             expires: new Date(seat.fecha_fin_reserva).getTime(),
-            sesionId: seat.userid ? seat.userid.toString() : ''
+            userId: seat.userId
           }));
         console.log('[DEBUG] blockedSeats después de filtrar:', this.blockedSeats);
         this.soldSeats = data
@@ -390,8 +381,8 @@ export class SeatsPage {
     );
   }
 
-  actualizarAsientoEnBD(seat: { row: number, col: number }, asiento: string, platea: string, estado: string, fechas: any, canjeada: number = 0) {
-    const userid = this.getSession();
+  actualizarAsientoEnBD(seat: { row: number, col: number }, asiento: string, platea: string, estado: string, fechas: any, canjeada: number = 0, userId: number) {
+    //const userid = this.getSession();
     console.log('[DEBUG] Enviando actualización de asiento al API:', {
       row: seat.row,
       col: seat.col,
@@ -399,10 +390,10 @@ export class SeatsPage {
       platea,
       estado,
       fechas,
-      userid,
+      userId,
       canjeada
     });
-    return this.asientosProvider.actualizarAsiento({ row: seat.row, col: seat.col }, asiento, platea, estado, fechas, userid, canjeada)
+    return this.asientosProvider.actualizarAsiento({ row: seat.row, col: seat.col }, asiento, platea, estado, fechas, userId, canjeada)
       .toPromise()
       .then(response => {
         console.log('[DEBUG] Respuesta de actualizarAsiento:', response);
@@ -423,11 +414,10 @@ export class SeatsPage {
   }
 
   actualizarEstadoUsuarioPorBloqueos() {
-    // 1. Encuentra todos los asientos bloqueados para ESTA sesión y aún vigentes
-    const miSesion = this.getSession();
+    // 1. Encuentra todos los asientos bloqueados aún vigentes
     const cartBloqueados = this.blockedSeats
       .filter(function (b) {
-        return b.sesionId === miSesion && b.expires > Date.now();
+        return b.expires > Date.now();
       })
       .map(function (b) {
         return { row: b.row, col: b.col };
@@ -462,7 +452,6 @@ export class SeatsPage {
 
 
   isblocked(row: number, col: number): boolean {
-    const miSesion = this.getSession();
     return this.blockedSeats.some(
       b => row === b.row && col === b.col && b.expires > Date.now()
     );
@@ -483,14 +472,11 @@ export class SeatsPage {
 
   //Nuevo funcion para llamar a la clase temporal
   applyTemporaryClasses() {
-    const miSesion = this.getSession();
-
     // Limpia temporales anteriores
     Array.from(document.querySelectorAll('.temporal')).forEach(el => el.classList.remove('temporal'));
 
     this.blockedSeats.forEach(seat => {
-      const esDeOtraSesion = seat.sesionId !== miSesion && seat.expires > Date.now();
-      if (esDeOtraSesion) {
+      if (seat.expires > Date.now()) {
         // Calcula el label visual
         const label = this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col });
 
@@ -531,15 +517,10 @@ export class SeatsPage {
   }
 
   onSeatChange(selectedSeats: { row: number, col: number }[]) {
-    const miSesion = this.getSession();
-
-    // Elimina bloqueos de mi sesión que ya no están seleccionados
+    // Elimina bloqueos que ya no están seleccionados
     this.blockedSeats = this.blockedSeats.filter(blocked => {
-      if (blocked.sesionId === miSesion) {
-        // Solo conserva los aún seleccionados
-        return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
-      }
-      return blocked.expires > Date.now();
+      // Solo conserva los aún seleccionados
+      return selectedSeats.some(sel => sel.row === blocked.row && sel.col === blocked.col && blocked.expires > Date.now());
     });
 
     // Añade nuevos bloqueos
@@ -556,25 +537,10 @@ export class SeatsPage {
           fecha_reserva: this.getGuayaquilDateString(now),
           fecha_fin_reserva: this.getGuayaquilDateString(fechaFinReserva)
         },
-        0
+        0,
+        1 // Cambiar esto por el ID del usuario real
       );
     });
-    // selectedSeats.forEach(seat => {
-    //   const alreadyBlocked = this.blockedSeats.some(
-    //     b => b.row === seat.row && b.col === seat.col && b.expires > Date.now()
-    //   );
-    //   const alreadySold = this.soldSeats.some(
-    //     s => s.row === seat.row && s.col === seat.col
-    //   );
-    //   if (!alreadyBlocked && !alreadySold) {
-    //     this.blockedSeats.push({
-    //       row: seat.row,
-    //       col: seat.col,
-    //       expires: Date.now() + this.timeLeft * 1000,
-    //       sesionId: miSesion
-    //     });
-    //   }
-    // });
 
     // Actualiza tu carrito
     this.cart = selectedSeats.map(seat => ({ row: seat.row, col: seat.col }));
@@ -725,9 +691,8 @@ export class SeatsPage {
     }).present();
   }
   removeAllBlockedSeats() {
-    const miSesion = this.getSession();
-    // Elimina todos los bloqueos de esta sesión
-    this.blockedSeats = this.blockedSeats.filter(b => b.sesionId !== miSesion);
+    // Elimina todos los bloqueos
+    this.blockedSeats = [];
     this.saveSeatsToStorage();
 
     // Limpia tu cart visual
@@ -886,7 +851,8 @@ export class SeatsPage {
                 {
                   fecha_canje: this.getGuayaquilDateString(now)
                 },
-                0
+                0,
+                1 // Cambiar esto por el ID del usuario real
               );
               // 🔍 Buscar el elemento en el DOM por ID
               const el = document.querySelector(`#seat-${seat.row}-${seat.col}`);
