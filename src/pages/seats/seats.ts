@@ -965,14 +965,15 @@ initializeZoomToFit(zoomIn: boolean = false) {
 
   if (this.plateaActiva === 'A') {
     // Zoom fijo más cercano para platea A
-    this.zoomLevel = Math.min(baseZoom * 3, 3);
+    
+    this.zoomLevel = Math.min(baseZoom * 2.8, 2.8) 
     this.globalScale = this.zoomLevel;
 
     const scaledMapWidth = map.offsetWidth * this.zoomLevel;
     const scaledMapHeight = map.offsetHeight * this.zoomLevel;
 
-    this.translateX = (containerRect.width - scaledMapWidth) / 2 + 50;
-    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 150;
+    this.translateX = (containerRect.width - scaledMapWidth) / 2 ;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
   } else {
     // Zoom adaptable con opción de acercar para platea B y C
     this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
