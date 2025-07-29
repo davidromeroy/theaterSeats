@@ -30,6 +30,7 @@ import { HttpClientModule } from '@angular/common/http';
     SplashScreen,
     File,
     FileOpener,
+    AsientosProvider,
     { provide: ErrorHandler, useClass: IonicErrorHandler }
   ]
 })
