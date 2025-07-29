@@ -971,6 +971,20 @@ export class SeatsPage {
     map.style.transformOrigin = '0 0';
   }
 
+  zoomIn() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
+  }
+
+  zoomOut() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
+  }
+
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     this.hammer = new hammerjs(map);
@@ -1073,6 +1087,31 @@ export class SeatsPage {
     }
   }
 
+  zoomAtPoint(factor: number, centerX: number, centerY: number) {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const previousZoom = this.zoomLevel;
+    const newZoom = Math.max(0.125, Math.min(previousZoom * factor, 1.125));
+
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+
+    const gestureX = centerX - containerRect.left;
+    const gestureY = centerY - containerRect.top;
+
+    const offsetX = (gestureX - this.translateX) / previousZoom;
+    const offsetY = (gestureY - this.translateY) / previousZoom;
+
+    this.zoomLevel = newZoom;
+    this.globalScale = newZoom;
+
+    this.translateX = gestureX - offsetX * newZoom;
+    this.translateY = gestureY - offsetY * newZoom;
+
+    this.clampPanToBounds();
+
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
+  }
+
   ionViewDidEnter() {
 
     this.platform.ready().then(() => {
@@ -1086,10 +1125,6 @@ export class SeatsPage {
       const container = this.seatContainer.nativeElement;
       this.initSeatChart(container); // retorna el chart
       // });
-
-      console.log(this.getPlateas("x"));
-      // console.log(this.getPlateas("B"));
-      // console.log(this.getPlateas("C"));
     });
   }
 
