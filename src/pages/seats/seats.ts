@@ -72,7 +72,7 @@ export class SeatsPage {
   timerActivo: boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
 
-   userAmount = 100;
+  userAmount = 100;
 
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
@@ -259,7 +259,7 @@ export class SeatsPage {
   getPlateas(platea) {
     // Platea A: bloque central de filas medias
     const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19])
-    .map(asiento => ({ ...asiento, type: 'Platea A' }));
+      .map(asiento => ({ ...asiento, type: 'Platea A' }));
 
     //Platea B:
     const plateaB = [
@@ -415,7 +415,6 @@ export class SeatsPage {
   }
 
   actualizarAsientoEnBD(seat: { row: number, col: number }, asiento: string, platea: string, estado: string, fechas: any, canjeada: number = 0, userId: number) {
-    //const userid = this.getSession();
     console.log('[DEBUG] Enviando actualización de asiento al API:', {
       row: seat.row,
       col: seat.col,
@@ -430,10 +429,44 @@ export class SeatsPage {
       .toPromise()
       .then(response => {
         console.log('[DEBUG] Respuesta de actualizarAsiento:', response);
-        return response;
+        // Manejo de respuesta del backend
+        if (response && response.success) {
+          if (response.message && response.message.includes('El asiento sigue reservado para este usuario')) {
+            this.alertCtrl.create({
+              title: 'Retoma tu reserva',
+              message: response.message,
+              buttons: [{ text: 'Aceptar' }]
+            }).present();
+          }
+          // Si es éxito normal, no mostrar alerta
+          return response;
+        } else if (response && response.code === 'asiento_reservado') {
+          this.alertCtrl.create({
+            title: 'Asiento ocupado',
+            message: 'Este asiento ya está reservado por otro usuario.',
+            buttons: [{ text: 'Aceptar' }]
+          }).present();
+          return response;
+        } else {
+          this.alertCtrl.create({
+            title: 'Error',
+            message: response && response.message ? response.message : 'No se pudo actualizar el asiento.',
+            buttons: [{ text: 'Aceptar' }]
+          }).present();
+          return response;
+        }
       })
       .catch(error => {
-        console.error('[ERROR] Error en actualizarAsiento:', error);
+        // Error de red o backend
+        let msg = 'Error en la petición.';
+        if (error && error.error && error.error.message) {
+          msg = error.error.message;
+        }
+        this.alertCtrl.create({
+          title: 'Error',
+          message: msg,
+          buttons: [{ text: 'Aceptar' }]
+        }).present();
         throw error;
       });
     // this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).subscribe(
@@ -499,7 +532,7 @@ export class SeatsPage {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      
+
     ];
   }
 
@@ -746,12 +779,14 @@ export class SeatsPage {
     this.updateSeatColorsByUserAmount(this.userAmount);
     this.refreshMap();
 
-    // (Opcional) Muestra un mensaje al usuario
-    this.alertCtrl.create({
-      title: 'Tiempo agotado',
-      message: 'Se acabó el tiempo para reservar tus asientos. Puedes volver a intentar.',
-      buttons: [{ text: 'Aceptar' }]
-    }).present();
+    // Muestra el mensaje solo si el usuario está en SeatsPage
+    if (this.navCtrl.getActive() && this.navCtrl.getActive().component === SeatsPage) {
+      this.alertCtrl.create({
+        title: 'Tiempo agotado',
+        message: 'Se acabó el tiempo para reservar tus asientos. Puedes volver a intentar.',
+        buttons: [{ text: 'Aceptar' }]
+      }).present();
+    }
   }
   removeAllBlockedSeats() {
     // Elimina todos los bloqueos
@@ -785,13 +820,13 @@ export class SeatsPage {
         const platea = this.getPlateaDeAsiento(row, col);
         const precio = this.getSeatPrice({ index: { row, col } });
 
-      if (saldoTemp >= precio) {
-        saldoTemp -= precio;
-        asientosValidos.push(item);
-      } else {
-        detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
+        if (saldoTemp >= precio) {
+          saldoTemp -= precio;
+          asientosValidos.push(item);
+        } else {
+          detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
+        }
       }
-    }
 
       if (detallesInvalidos.length > 0) {
         const alertaError = this.alertCtrl.create({
@@ -988,7 +1023,35 @@ export class SeatsPage {
 
   }
 
-/*
+  /*
+    initializeZoomToFit(zoomIn: boolean = false) {
+      const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+      const container = this.seatContainer.nativeElement;
+      const containerRect = container.getBoundingClientRect();
+  
+      const scaleX = containerRect.width / map.offsetWidth;
+      const scaleY = containerRect.height / map.offsetHeight;
+  
+      // Escala mínima para que el mapa completo entre en el contenedor
+      let baseZoom = Math.min(scaleX, scaleY, 1);
+  
+      this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
+      this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
+  
+      // Centrado horizontal y vertical
+      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+  
+      this.translateX = (containerRect.width - scaledMapWidth) / 2;
+  
+      // Si se hace zoom, se baja para que el escenario sea visible
+      this.translateY = zoomIn ? (containerRect.height - scaledMapHeight) / 2 - 50 : (containerRect.height - scaledMapHeight) / 2;
+  
+      // Aplicar la transformación inicial
+      map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+      map.style.transformOrigin = '0 0';
+    }*/
+
   initializeZoomToFit(zoomIn: boolean = false) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
@@ -997,64 +1060,36 @@ export class SeatsPage {
     const scaleX = containerRect.width / map.offsetWidth;
     const scaleY = containerRect.height / map.offsetHeight;
 
-    // Escala mínima para que el mapa completo entre en el contenedor
     let baseZoom = Math.min(scaleX, scaleY, 1);
 
-    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
-    this.globalScale = this.zoomLevel; // importante para que el pinch continúe desde aquí
+    if (this.plateaActiva === 'A') {
+      // Zoom fijo más cercano para platea A
 
-    // Centrado horizontal y vertical
-    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+      this.zoomLevel = Math.min(baseZoom * 2.8, 2.8)
+      this.globalScale = this.zoomLevel;
 
-    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
 
-    // Si se hace zoom, se baja para que el escenario sea visible
-    this.translateY = zoomIn ? (containerRect.height - scaledMapHeight) / 2 - 50 : (containerRect.height - scaledMapHeight) / 2;
+      this.translateX = (containerRect.width - scaledMapWidth) / 2;
+      this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
+    } else {
+      // Zoom adaptable con opción de acercar para platea B y C
+      this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
+      this.globalScale = this.zoomLevel;
 
-    // Aplicar la transformación inicial
+      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+      this.translateX = (containerRect.width - scaledMapWidth) / 2;
+      this.translateY = zoomIn
+        ? (containerRect.height - scaledMapHeight) / 2 - 50
+        : (containerRect.height - scaledMapHeight) / 2;
+    }
+
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
     map.style.transformOrigin = '0 0';
-  }*/
-
-initializeZoomToFit(zoomIn: boolean = false) {
-  const map = this.seatContainer.nativeElement.querySelector('.sc-map');
-  const container = this.seatContainer.nativeElement;
-  const containerRect = container.getBoundingClientRect();
-
-  const scaleX = containerRect.width / map.offsetWidth;
-  const scaleY = containerRect.height / map.offsetHeight;
-
-  let baseZoom = Math.min(scaleX, scaleY, 1);
-
-  if (this.plateaActiva === 'A') {
-    // Zoom fijo más cercano para platea A
-    
-    this.zoomLevel = Math.min(baseZoom * 2.8, 2.8) 
-    this.globalScale = this.zoomLevel;
-
-    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
-
-    this.translateX = (containerRect.width - scaledMapWidth) / 2 ;
-    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
-  } else {
-    // Zoom adaptable con opción de acercar para platea B y C
-    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
-    this.globalScale = this.zoomLevel;
-
-    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
-
-    this.translateX = (containerRect.width - scaledMapWidth) / 2;
-    this.translateY = zoomIn
-      ? (containerRect.height - scaledMapHeight) / 2 - 50
-      : (containerRect.height - scaledMapHeight) / 2;
   }
-
-  map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-  map.style.transformOrigin = '0 0';
-}
 
 
 
@@ -1151,7 +1186,7 @@ initializeZoomToFit(zoomIn: boolean = false) {
       }, 300);
     });
   }
-  
+
 
   clampPanToBounds() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
