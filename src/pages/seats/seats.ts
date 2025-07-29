@@ -1035,6 +1035,20 @@ initializeZoomToFit(zoomIn: boolean = false) {
 
 
 
+  zoomIn() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    // this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
+  }
+
+  zoomOut() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    // this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
+  }
+
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     this.hammer = new hammerjs(map);
