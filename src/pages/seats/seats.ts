@@ -798,26 +798,20 @@ export class SeatsPage {
 
   private setupCartListener(sc: any) {
     let reconstruyendoCart = false;
-
     sc.addEventListener('cartchange', () => {
       const cart = sc.getCart();
-
-      // ✅ Evita afectar el temporizador si estamos en medio de una reconstrucción visual
       if (!reconstruyendoCart) {
         if (cart.length > 0 && !this.timerActivo) this.startTimer();
         if (cart.length === 0 && this.timerActivo) this.stopTimer();
       }
-
       let saldoTemp = this.initialUserAmount;
       const detallesInvalidos: string[] = [];
       const asientosValidos: any[] = [];
-
       for (const item of cart) {
         const row = item.index.row;
         const col = item.index.col;
         const platea = this.getPlateaDeAsiento(row, col);
         const precio = this.getSeatPrice({ index: { row, col } });
-
         if (saldoTemp >= precio) {
           saldoTemp -= precio;
           asientosValidos.push(item);
@@ -825,7 +819,6 @@ export class SeatsPage {
           detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
         }
       }
-
       if (detallesInvalidos.length > 0) {
         const alertaError = this.alertCtrl.create({
           title: 'Puntos insuficientes',
@@ -833,37 +826,30 @@ export class SeatsPage {
           buttons: [{ text: 'Aceptar' }]
         });
         alertaError.present();
-
-        // 🔐 Indicamos que estamos en proceso de reconstrucción visual
         reconstruyendoCart = true;
-
-        // ✅ Limpiar y seleccionar solo válidos sin disparar stopTimer()
         sc.clearCart();
         (this.options.map as any).selectedSeats = asientosValidos.map(a => a.index);
         this.refreshMap();
-
-        // ✅ Esperamos al siguiente frame y restablecemos la bandera
         requestAnimationFrame(() => {
           reconstruyendoCart = false;
         });
       }
-
       // Actualiza carrito
       this.cart = asientosValidos.map(item => ({
         row: item.index.row,
         col: item.index.col
       }));
-
       this.onSeatChange(this.cart);
-
       // Actualiza visual del contador
       requestAnimationFrame(() => {
         const labels = this.cart
           .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
           .join(', ');
         const countP = document.querySelector('.cart-count');
-        if (countP) countP.textContent = `${sc.getCart().length} ticket(s)`;
-
+        if (countP) {
+          // mostrar el nombre de asiento(s) seleccionado(s) junto con cantidad
+          countP.textContent = `${sc.getCart().length} ticket(s): ${labels}`;
+        }
         // Aplica el replace al totalElement cada vez que se actualiza el carrito
         const totalElement = document.querySelector('.sc-cart-total');
         if (totalElement) {
@@ -871,7 +857,6 @@ export class SeatsPage {
           totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
         }
       });
-
       this.actualizarEstadoUsuario();
     });
   }
