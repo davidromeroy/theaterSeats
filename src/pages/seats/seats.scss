@@ -1,5 +1,16 @@
 @import url("https://cdn.jsdelivr.net/npm/seatchart@latest/dist/seatchart.min.css");
 
+ion-header,
+.toolbar-background {
+  background-color: #124F26 !important;
+  color: white !important;
+}
+
+.toolbar-title,
+.toolbar-title-md {
+  color: white !important;
+}
+
 page-seats {
 
   // 🎨 LEYENDA PRINCIPAL (Plateas)
@@ -7,20 +18,29 @@ page-seats {
     background: #ffffff;
     border: 1px solid #ddd;
     border-radius: 12px;
-    padding: 1rem;
+    //padding: 1rem;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     max-width: 100%;
     margin-bottom: 1rem;
+    margin-top: 1rem;
+    position: relative;
 
     .legend-title {
       font-size: 1.5rem;
       font-weight: bold;
-      margin-bottom: 0.5rem;
+      background-color: #124F26;
+      color: white;
+      padding: 5px 10px;
+      width: 100%;
+      display: block;
+      margin: 0;
+      box-sizing: border-box;
+      border-radius: 12px 12px 0 0;
     }
 
     .legend-list {
       list-style: none;
-      padding: 0;
+      padding: 10px;
       margin: 0;
       display: flex;
       flex-wrap: wrap;
@@ -36,6 +56,8 @@ page-seats {
       .legend-bullet {
         width: 20px;
         height: 20px;
+        min-width: 20px;
+        min-height: 20px;
         border-radius: 4px;
         box-sizing: border-box;
       }
@@ -71,7 +93,10 @@ page-seats {
       .legend-bullet {
         width: 20px;
         height: 20px;
+        min-width: 20px;
+        min-height: 20px;
         border-radius: 4px;
+        margin: 0;
         box-sizing: border-box;
       }
 
@@ -82,16 +107,30 @@ page-seats {
     }
   }
 
+  ion-icon {
+    color: #124F26 !important;
+    font-size: 1.8em !important;
+
+  }
+
   // 🛒 BOTÓN DEL CARRITO
   .sc-cart-btn-submit,
   .sc-cart-btn-delete {
-    background-color: #95013d;
+    background-color: #124F26;
+    border-radius: 20px;
 
     &:hover,
     &:active {
-      background-color: #b21853;
+      background-color: #124F26;
     }
   }
+
+  .sc-seat-selected {
+    cursor: pointer;
+    background-color:#124F26 !important;
+    color: white;
+    opacity: 1;
+}
 
   // 🎭 ESCENARIO DEL TEATRO
   .stage {
@@ -252,6 +291,28 @@ page-seats {
     font-weight: bold;
   }
 
+  // Botenes Zoom 
+  .zoom-controls {
+    position: relative;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    z-index: 1000;
+    margin-top: 10px;
+
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
+
   // 🎟️ ESTILOS DE ASIENTOS
   .sc-seat {
     flex: 0 0 auto !important; // evita que se escalen
@@ -272,6 +333,7 @@ page-seats {
       transform: scale(0.9);
     }
   }
+
   .sc-seat.sc-seat-available:hover {
     cursor: pointer;
     opacity: 1;
@@ -284,26 +346,39 @@ page-seats {
 
   .sc-seat.sc-seat-selected {
     cursor: pointer;
-    background-color: #95013d;
+    background-color: #124F26;
     color: white;
     opacity: 1;
   }
- .timer {
-  font-size: 2.3rem;
-  font-weight: bold;
-  color: #222;
-  transition: color 0.3s;
-}
 
-.timer-critical {
-  color: #e53935 !important;
-  animation: blink 0.9s step-start 0s infinite;
-}
+  .sc-seat.sc-seat-availables {
+    min-width: 20px !important;
+    width: 20px !important;
+  }
 
-@keyframes blink {
-  50% { opacity: 0.2; }
-  100% { opacity: 1; }
-}
+  .timer {
+    font-size: 2.3rem;
+    font-weight: bold;
+    color: #222;
+    transition: color 0.3s;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .timer-critical {
+    color: #e53935 !important;
+    animation: blink 0.9s step-start 0s infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0.2;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
 
 
   //ocupados
@@ -311,15 +386,15 @@ page-seats {
   .sc-seat-reserved {
     color: white;
     background-color: #a2a2a2;
-     cursor: not-allowed;
+    cursor: not-allowed;
   }
 
-//Nuevo: clase para asientos temporales
-.temporal {
-  background-color: orange !important;
-  cursor: not-allowed;
-  pointer-events: none;
-}
+  //Nuevo: clase para asientos temporales
+  .temporal {
+    background-color: orange !important;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 
 
 
@@ -355,7 +430,7 @@ page-seats {
     pointer-events: none; // ❌ No se puede hacer clic
     cursor: default; // 👉 Cursor normal 
     background-color: transparent;
-    color: #95013d;
+    color: #124F26;
     font-size: 1.5rem !important;
     font-weight: bold;
     opacity: 1 !important;
@@ -397,13 +472,23 @@ page-seats {
     .sc-cart-footer {
       width: 100%;
       height: max-content;
+      // display: flex;
+      // flex-direction: row-reverse; // Intercambia el orden de los elementos hijos
     }
 
   }
-  .budget-label{
+
+  .budget-label {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: start;
+    justify-content: flex-start;
+    gap: 5px;
+  }
+
+  p {
+    margin: 0;
+
   }
 
   // 📱 MEDIAS RESPONSIVAS

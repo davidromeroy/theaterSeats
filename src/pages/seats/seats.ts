@@ -5,6 +5,7 @@ import { AlertController } from 'ionic-angular';
 import { AsientosProvider } from '../../providers/asientos/asientos';
 
 
+
 declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
@@ -71,11 +72,11 @@ export class SeatsPage {
   timerActivo: boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
 
-  userAmount = 100;
+   userAmount = 100;
 
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
-  // isReservado: boolean = false;// Nuevo
+  plateaActiva: string = 'A'; // Nueva variable para asientos disponibles
 
   blockedSeats: { row: number, col: number, expires: number, userId: number }[] = [];
   soldSeats: { row: number, col: number }[] = [];
@@ -91,8 +92,21 @@ export class SeatsPage {
   translateY = 0;
   startX = 0;
   startY = 0;
+
+  // nuevo
+  panX: number;
+  panY: number;
+
   private hammer: any;
   presionado: boolean = false;
+  precioPlateaA: number = 40;
+  precioPlateaB: number = 30;
+  precioPlateaC: number = 20;
+  maxA: number = 0;
+  maxB: number = 0;
+  maxC: number = 0;
+  maxEntradasPorPlatea: { A: any; B: any; C: any; };
+  // plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
 
   constructor(
     public navCtrl: NavController,
@@ -244,7 +258,8 @@ export class SeatsPage {
 
   getPlateas(platea) {
     // Platea A: bloque central de filas medias
-    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19])
+    .map(asiento => ({ ...asiento, type: 'Platea A' }));
 
     //Platea B:
     const plateaB = [
@@ -255,6 +270,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 6, 'left'),
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 0, 'right'),
       ...this.generateSideSeats([20, 21], 5, 0, 'both'),]
+      .map(asiento => ({ ...asiento, type: 'Platea B' }));
 
     // Platea C:
     const plateaC = [
@@ -265,7 +281,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 4, 'right'),       // laterales en filas 15–19
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 0, 'left'),       // laterales en filas 15–19
       ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])  //  centro en filas altas W–R
-    ];
+    ].map(asiento => ({ ...asiento, type: 'Platea C' }));
 
     switch (platea) {
       case 'A':
@@ -279,7 +295,24 @@ export class SeatsPage {
 
       default:
         console.log("Asiento Fuera de Rango");
-        break;
+        const asientos = [
+          ...plateaA,
+          ...plateaB,
+          ...plateaC
+        ];
+        const output = {
+          rows: 22,
+          cols: 64,
+          types: {
+            "Platea A": "#42445A",
+            "Platea B": "#5B67EC",
+            "Platea C": "#15A66F"
+          },
+          seats: asientos  // Aquí va tu array de 952 objetos
+        };
+
+        // return JSON.stringify(output, null, 2);
+        return [];
     }
   }
 
@@ -335,7 +368,7 @@ export class SeatsPage {
       indexerRows: { visible: false },
       frontVisible: false,
     },
-    cart: { currency: '$', submitLabel: 'Reservar' },
+    cart: { currency: 'puntos ', submitLabel: 'Reservar' },
     legendVisible: false,
   };
 
@@ -466,7 +499,7 @@ export class SeatsPage {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
+      
     ];
   }
 
@@ -591,7 +624,14 @@ export class SeatsPage {
       // Crea el contador de tickets
       const countP = document.createElement('p');
       countP.classList.add('cart-count');
-      countP.textContent = `${sc.getCart().length} tickets`;
+      countP.textContent = `${sc.getCart().length} ticket(s)`;
+
+      const totalElement = document.querySelector('.sc-cart-total');
+
+      if (totalElement) {
+        const regex = /puntos\s+([\d.]+)/;
+        totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
+      }
 
       // Intenta insertarlo al principio del header, si existe
       if (originalHeader.firstChild) {
@@ -602,6 +642,30 @@ export class SeatsPage {
 
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
+
+      // --- Interceptar y reemplazar el texto de .sc-cart-total ---
+      const cartTotalEl = cartContainer.querySelector('.sc-cart-total');
+      if (cartTotalEl) {
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            const totalPuntos = sc.getCartTotal();
+            const nuevoTexto = `Puntos gastados: ${totalPuntos}`;
+
+            // Solo actualiza si es necesario (evita loop infinito)
+            if (cartTotalEl.textContent !== nuevoTexto) {
+              cartTotalEl.textContent = nuevoTexto;
+            }
+          });
+        });
+
+        // Observar cambios en el contenido del <p>
+        observer.observe(cartTotalEl, { childList: true, characterData: true, subtree: true });
+
+        // Asigna el valor inicial manualmente
+        const totalInicial = sc.getCart().reduce((sum, item) => sum + (item.price || 0), 0);
+        cartTotalEl.textContent = `Puntos gastados: ${totalInicial}`;
+      }
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
@@ -635,7 +699,6 @@ export class SeatsPage {
     const cart = this.sc.getCart(); // Asientos seleccionados
     const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
     const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
-
     this.userAmount = saldoRestante;
   }
 
@@ -722,13 +785,13 @@ export class SeatsPage {
         const platea = this.getPlateaDeAsiento(row, col);
         const precio = this.getSeatPrice({ index: { row, col } });
 
-        if (saldoTemp >= precio) {
-          saldoTemp -= precio;
-          asientosValidos.push(item);
-        } else {
-          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
-        }
+      if (saldoTemp >= precio) {
+        saldoTemp -= precio;
+        asientosValidos.push(item);
+      } else {
+        detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
       }
+    }
 
       if (detallesInvalidos.length > 0) {
         const alertaError = this.alertCtrl.create({
@@ -766,17 +829,19 @@ export class SeatsPage {
           .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
           .join(', ');
         const countP = document.querySelector('.cart-count');
-        if (countP) countP.textContent = `${this.cart.length} tickets:\n${labels}`;
+        if (countP) countP.textContent = `${sc.getCart().length} ticket(s)`;
+
+        // Aplica el replace al totalElement cada vez que se actualiza el carrito
+        const totalElement = document.querySelector('.sc-cart-total');
+        if (totalElement) {
+          const regex = /puntos\s+([\d.]+)/;
+          totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
+        }
       });
 
       this.actualizarEstadoUsuario();
     });
   }
-
-
-
-
-
 
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
@@ -923,7 +988,7 @@ export class SeatsPage {
 
   }
 
-
+/*
   initializeZoomToFit(zoomIn: boolean = false) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
@@ -950,6 +1015,62 @@ export class SeatsPage {
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
     map.style.transformOrigin = '0 0';
+  }*/
+
+initializeZoomToFit(zoomIn: boolean = false) {
+  const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+  const container = this.seatContainer.nativeElement;
+  const containerRect = container.getBoundingClientRect();
+
+  const scaleX = containerRect.width / map.offsetWidth;
+  const scaleY = containerRect.height / map.offsetHeight;
+
+  let baseZoom = Math.min(scaleX, scaleY, 1);
+
+  if (this.plateaActiva === 'A') {
+    // Zoom fijo más cercano para platea A
+    
+    this.zoomLevel = Math.min(baseZoom * 2.8, 2.8) 
+    this.globalScale = this.zoomLevel;
+
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2 ;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
+  } else {
+    // Zoom adaptable con opción de acercar para platea B y C
+    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
+    this.globalScale = this.zoomLevel;
+
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+    this.translateY = zoomIn
+      ? (containerRect.height - scaledMapHeight) / 2 - 50
+      : (containerRect.height - scaledMapHeight) / 2;
+  }
+
+  map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+  map.style.transformOrigin = '0 0';
+}
+
+
+
+
+  zoomIn() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
+  }
+
+  zoomOut() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
   }
 
   pinchToZoom() {
@@ -968,9 +1089,13 @@ export class SeatsPage {
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
       const previousZoom = this.zoomLevel;
-      this.zoomLevel = Math.max(0.125, Math.min(event.scale * this.globalScale, 1.125)); // Limita el zoom entre 0.2x y 1.5x
-
       const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+
+      const scaleX = containerRect.width / map.offsetWidth;
+      const scaleY = containerRect.height / map.offsetHeight;
+
+      const baseZoom = Math.min(scaleX, scaleY, 1);
+      this.zoomLevel = Math.max(baseZoom, Math.min(event.scale * this.globalScale, baseZoom + 1)); // Limita el zoom al container
 
       // Coordenadas del gesto dentro del contenedor
       const gestureX = event.center.x - containerRect.left;
@@ -1030,6 +1155,7 @@ export class SeatsPage {
       }, 300);
     });
   }
+  
 
   clampPanToBounds() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
@@ -1053,6 +1179,59 @@ export class SeatsPage {
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
     }
   }
+  // Nuevo: Función que devuelve la clase según la platea activa
+  get clasePlateaActiva(): string {
+    switch (this.plateaActiva) {
+      case 'A': return 'plateaA';
+      case 'B': return 'plateaB';
+      case 'C': return 'plateaC';
+      default: return '';
+    }
+  }
+  // Getter dinámico para el máximo de asientos seleccionables según la platea activa
+  get maxEntradasPlateaActiva(): number {
+    switch (this.plateaActiva) {
+      case 'A': return Math.floor(this.userAmount / this.precioPlateaA);
+      case 'B': return Math.floor(this.userAmount / this.precioPlateaB);
+      case 'C': return Math.floor(this.userAmount / this.precioPlateaC);
+      default: return 0;
+    }
+  }
+  cambiarPlatea(nuevaPlatea: string) {
+    this.plateaActiva = nuevaPlatea;
+  }
+
+  zoomAtPoint(factor: number, centerX: number, centerY: number) {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const previousZoom = this.zoomLevel;
+
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const scaleX = containerRect.width / map.offsetWidth;
+    const scaleY = containerRect.height / map.offsetHeight;
+
+    const baseZoom = Math.min(scaleX, scaleY, 1);
+    const newZoom = Math.max(baseZoom, Math.min(previousZoom * factor, baseZoom + 1));
+
+    const gestureX = centerX - containerRect.left;
+    const gestureY = centerY - containerRect.top;
+
+    const offsetX = (gestureX - this.translateX) / previousZoom;
+    const offsetY = (gestureY - this.translateY) / previousZoom;
+
+    this.zoomLevel = newZoom;
+    this.globalScale = newZoom;
+
+    this.translateX = gestureX - offsetX * newZoom;
+    this.translateY = gestureY - offsetY * newZoom;
+
+    this.clampPanToBounds();
+
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
+  }
+
+
+
 
   ionViewDidEnter() {
 
@@ -1061,13 +1240,18 @@ export class SeatsPage {
 
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
-
+      // Calcula la cantidad máxima de asientos que puede escoger el usuario en cada platea
+      this.maxA = Math.floor(this.userAmount / this.precioPlateaA);
+      this.maxB = Math.floor(this.userAmount / this.precioPlateaB);
+      this.maxC = Math.floor(this.userAmount / this.precioPlateaC);
+      this.maxEntradasPorPlatea = { A: this.maxA, B: this.maxB, C: this.maxC };
       this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
 
       const container = this.seatContainer.nativeElement;
       this.initSeatChart(container); // retorna el chart
       // });
     });
+
   }
 
 }

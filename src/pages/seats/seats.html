@@ -32,7 +32,8 @@
   <div [hidden]="loading">
     <!--Dinero disponible del usuario -->
     <div class="budget-label">
-      <p><strong>Puntos disponibles:</strong> ${{ userAmount }}</p>
+      <p><strong>Puntos disponibles:</strong> {{ userAmount }}</p>
+      <p>Puedes escoger hasta {{ maxEntradasPlateaActiva }} asientos en Platea {{ this.plateaActiva}} </p>
       <div *ngIf="timerActivo" class="timer" [ngClass]="{'timer-critical': isTimeCritical()}">
         {{ formatTimeLeft() }}
       </div>
@@ -41,20 +42,20 @@
 
     <!-- Leyenda de Plateas -->
     <div class="legend-card">
-      <h3 class="legend-title">Plateas</h3>
+      <h3 class="legend-title">PLATEAS</h3>
       <ul class="legend-list">
         <li class="legend-item">
           <div class="legend-bullet plateaA"></div>
-          <p class="legend-description">Platea A ($40)</p>
+          <p class="legend-description">Platea {{ this.plateaActiva }} </p>
         </li>
-        <li class="legend-item">
+        <!-- <li class="legend-item">
           <div class="legend-bullet plateaB"></div>
           <p class="legend-description">Platea B ($30)</p>
         </li>
         <li class="legend-item">
           <div class="legend-bullet plateaC"></div>
           <p class="legend-description">Platea C ($20)</p>
-        </li>
+        </li> -->
       </ul>
     </div>
     <!-- Mapa y carrito -->
@@ -64,15 +65,23 @@
       <ion-icon [name]="presionado ? 'contract' : 'expand'" (click)="toggleIcon(presionado ? false : true)">
       </ion-icon>
 
+      <div class="zoom-controls">
+        <button (click)="zoomOut()">−</button>
+        <button (click)="zoomIn()">+</button>
+      </div>
       <div class="legend-footer">
         <ul class="legend-list">
+          <li class="legend-item">
+            <div class="legend-bullet" [ngClass]="clasePlateaActiva"></div>
+            <p class="legend-description">Asientos Disponible</p>
+          </li>
           <li class="legend-item">
             <div class="legend-bullet sc-seat-reserved"></div>
             <p class="legend-description">Ocupado</p>
           </li>
           <li class="legend-item">
             <div class="legend-bullet sc-seat sc-seat-selected"></div>
-            <p class="legend-description">Su Asiento</p>
+            <p class="legend-description">Asientos Seleccionados</p>
           </li>
         </ul>
       </div>
