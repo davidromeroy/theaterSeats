@@ -106,7 +106,6 @@ export class SeatsPage {
   maxB: number = 0;
   maxC: number = 0;
   maxEntradasPorPlatea: { A: any; B: any; C: any; };
-  plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
 
   constructor(
     public navCtrl: NavController,
@@ -642,6 +641,30 @@ export class SeatsPage {
 
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
+
+      // --- Interceptar y reemplazar el texto de .sc-cart-total ---
+      const cartTotalEl = cartContainer.querySelector('.sc-cart-total');
+      if (cartTotalEl) {
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            const totalPuntos = sc.getCartTotal();
+            const nuevoTexto = `Puntos gastados: ${totalPuntos}`;
+
+            // Solo actualiza si es necesario (evita loop infinito)
+            if (cartTotalEl.textContent !== nuevoTexto) {
+              cartTotalEl.textContent = nuevoTexto;
+            }
+          });
+        });
+
+        // Observar cambios en el contenido del <p>
+        observer.observe(cartTotalEl, { childList: true, characterData: true, subtree: true });
+
+        // Asigna el valor inicial manualmente
+        const totalInicial = sc.getCart().reduce((sum, item) => sum + (item.price || 0), 0);
+        cartTotalEl.textContent = `Puntos gastados: ${totalInicial}`;
+      }
 
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
@@ -1198,19 +1221,7 @@ initializeZoomToFit(zoomIn: boolean = false) {
     map.style.transformOrigin = '0 0';
   }
 
-  // Nuevo: Función que devuelve la clase según la platea activa
-  get clasePlateaActiva(): string {
-    switch (this.plateaActiva) {
-      case 'A': return 'plateaA';
-      case 'B': return 'plateaB';
-      case 'C': return 'plateaC';
-      default: return '';
-    }
-  }
 
-  cambiarPlatea(nuevaPlatea: string) {
-    this.plateaActiva = nuevaPlatea;
-  }
 
 
   ionViewDidEnter() {
