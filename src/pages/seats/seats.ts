@@ -76,6 +76,7 @@ export class SeatsPage {
 
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
+  plateaActiva: string = 'A'; // Nueva variable para asientos disponibles
 
   blockedSeats: { row: number, col: number, expires: number, userId: number }[] = [];
   soldSeats: { row: number, col: number }[] = [];
@@ -1053,6 +1054,21 @@ export class SeatsPage {
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
     }
   }
+
+  // Nuevo: Función que devuelve la clase según la platea activa
+  get clasePlateaActiva(): string {
+    switch (this.plateaActiva) {
+      case 'A': return 'plateaA';
+      case 'B': return 'plateaB';
+      case 'C': return 'plateaC';
+      default: return '';
+    }
+  }
+
+  cambiarPlatea(nuevaPlatea: string) {
+    this.plateaActiva = nuevaPlatea;
+  }
+
 
   ionViewDidEnter() {
 

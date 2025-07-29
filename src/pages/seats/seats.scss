@@ -85,13 +85,20 @@ page-seats {
   // 🛒 BOTÓN DEL CARRITO
   .sc-cart-btn-submit,
   .sc-cart-btn-delete {
-    background-color: #95013d;
+    background-color: #124F26;
 
     &:hover,
     &:active {
-      background-color: #b21853;
+      background-color: #124F26;
     }
   }
+
+  .sc-seat-selected {
+    cursor: pointer;
+    background-color:#124F26 !important;
+    color: white;
+    opacity: 1;
+}
 
   // 🎭 ESCENARIO DEL TEATRO
   .stage {
