@@ -779,11 +779,6 @@ export class SeatsPage {
     });
   }
 
-
-
-
-
-
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
       const cart = sc.getCart();
@@ -958,44 +953,44 @@ export class SeatsPage {
     map.style.transformOrigin = '0 0';
   }*/
 
-  initializeZoomToFit(zoomIn: boolean = false) {
-    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
-    const container = this.seatContainer.nativeElement;
-    const containerRect = container.getBoundingClientRect();
+initializeZoomToFit(zoomIn: boolean = false) {
+  const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+  const container = this.seatContainer.nativeElement;
+  const containerRect = container.getBoundingClientRect();
 
-    const scaleX = containerRect.width / map.offsetWidth;
-    const scaleY = containerRect.height / map.offsetHeight;
+  const scaleX = containerRect.width / map.offsetWidth;
+  const scaleY = containerRect.height / map.offsetHeight;
 
-    // Escala mínima para que el mapa completo entre en el contenedor
-    let baseZoom = Math.min(scaleX, scaleY, 1);
+  let baseZoom = Math.min(scaleX, scaleY, 1);
 
-    // 👉 Zoom más cercano si es platea A
-    if (this.plateaActiva === 'A') {
-      this.zoomLevel = Math.min(baseZoom * 3, 3); // más zoom (3x)
-      this.globalScale = this.zoomLevel;
+  if (this.plateaActiva === 'A') {
+    // Zoom fijo más cercano para platea A
+    this.zoomLevel = Math.min(baseZoom * 3, 3);
+    this.globalScale = this.zoomLevel;
 
-      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
 
-      // 💡 Ajusta para centrar platea A (más hacia abajo y más al centro)
-      this.translateX = (containerRect.width - scaledMapWidth) / 2 + 50; // mueve hacia la derecha
-      this.translateY = (containerRect.height - scaledMapHeight) / 2 + -150; // mueve hacia abajo
-    } else {
-      // Zoom automático para B y C
-      this.zoomLevel = baseZoom;
-      this.globalScale = this.zoomLevel;
+    this.translateX = (containerRect.width - scaledMapWidth) / 2 + 50;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 150;
+  } else {
+    // Zoom adaptable con opción de acercar para platea B y C
+    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
+    this.globalScale = this.zoomLevel;
 
-      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
 
-      this.translateX = (containerRect.width - scaledMapWidth) / 2;
-      this.translateY = (containerRect.height - scaledMapHeight) / 2;
-    }
-
-    // Aplica la transformación
-    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-    map.style.transformOrigin = '0 0';
+    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+    this.translateY = zoomIn
+      ? (containerRect.height - scaledMapHeight) / 2 - 50
+      : (containerRect.height - scaledMapHeight) / 2;
   }
+
+  map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+  map.style.transformOrigin = '0 0';
+}
+
 
 
 
