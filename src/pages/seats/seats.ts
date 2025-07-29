@@ -643,6 +643,30 @@ export class SeatsPage {
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
 
+      // --- Interceptar y reemplazar el texto de .sc-cart-total ---
+      const cartTotalEl = cartContainer.querySelector('.sc-cart-total');
+      if (cartTotalEl) {
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            const totalPuntos = sc.getCartTotal();
+            const nuevoTexto = `Puntos gastados: ${totalPuntos}`;
+
+            // Solo actualiza si es necesario (evita loop infinito)
+            if (cartTotalEl.textContent !== nuevoTexto) {
+              cartTotalEl.textContent = nuevoTexto;
+            }
+          });
+        });
+
+        // Observar cambios en el contenido del <p>
+        observer.observe(cartTotalEl, { childList: true, characterData: true, subtree: true });
+
+        // Asigna el valor inicial manualmente
+        const totalInicial = sc.getCart().reduce((sum, item) => sum + (item.price || 0), 0);
+        cartTotalEl.textContent = `Puntos gastados: ${totalInicial}`;
+      }
+
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
       this.initializeZoomToFit(false);
@@ -1039,14 +1063,14 @@ initializeZoomToFit(zoomIn: boolean = false) {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
     const centerX = containerRect.left + containerRect.width / 2;
     const centerY = containerRect.top + containerRect.height / 2;
-    // this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
+    this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
   }
 
   zoomOut() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
     const centerX = containerRect.left + containerRect.width / 2;
     const centerY = containerRect.top + containerRect.height / 2;
-    // this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
+    this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
   }
 
   pinchToZoom() {
@@ -1172,6 +1196,33 @@ initializeZoomToFit(zoomIn: boolean = false) {
   cambiarPlatea(nuevaPlatea: string) {
     this.plateaActiva = nuevaPlatea;
   }
+
+  zoomAtPoint(factor: number, centerX: number, centerY: number) {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const previousZoom = this.zoomLevel;
+    const newZoom = Math.max(0.125, Math.min(previousZoom * factor, 1.125));
+
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+
+    const gestureX = centerX - containerRect.left;
+    const gestureY = centerY - containerRect.top;
+
+    const offsetX = (gestureX - this.translateX) / previousZoom;
+    const offsetY = (gestureY - this.translateY) / previousZoom;
+
+    this.zoomLevel = newZoom;
+    this.globalScale = newZoom;
+
+    this.translateX = gestureX - offsetX * newZoom;
+    this.translateY = gestureY - offsetY * newZoom;
+
+    this.clampPanToBounds();
+
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
+  }
+
+
 
 
   ionViewDidEnter() {
