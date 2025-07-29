@@ -1013,7 +1013,6 @@ initializeZoomToFit(zoomIn: boolean = false) {
 
 
 
-  }
 
   zoomIn() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
