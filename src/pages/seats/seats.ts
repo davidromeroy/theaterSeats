@@ -92,6 +92,11 @@ export class SeatsPage {
   translateY = 0;
   startX = 0;
   startY = 0;
+
+  // nuevo
+  panX: number;
+  panY: number;
+
   private hammer: any;
   presionado: boolean = false;
 
@@ -924,7 +929,7 @@ export class SeatsPage {
 
   }
 
-
+/*
   initializeZoomToFit(zoomIn: boolean = false) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
@@ -951,7 +956,48 @@ export class SeatsPage {
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
     map.style.transformOrigin = '0 0';
+  }*/
+
+  initializeZoomToFit(zoomIn: boolean = false) {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const container = this.seatContainer.nativeElement;
+    const containerRect = container.getBoundingClientRect();
+
+    const scaleX = containerRect.width / map.offsetWidth;
+    const scaleY = containerRect.height / map.offsetHeight;
+
+    // Escala mínima para que el mapa completo entre en el contenedor
+    let baseZoom = Math.min(scaleX, scaleY, 1);
+
+    // 👉 Zoom más cercano si es platea A
+    if (this.plateaActiva === 'A') {
+      this.zoomLevel = Math.min(baseZoom * 3, 3); // más zoom (3x)
+      this.globalScale = this.zoomLevel;
+
+      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+      // 💡 Ajusta para centrar platea A (más hacia abajo y más al centro)
+      this.translateX = (containerRect.width - scaledMapWidth) / 2 + 50; // mueve hacia la derecha
+      this.translateY = (containerRect.height - scaledMapHeight) / 2 + -150; // mueve hacia abajo
+    } else {
+      // Zoom automático para B y C
+      this.zoomLevel = baseZoom;
+      this.globalScale = this.zoomLevel;
+
+      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+      this.translateX = (containerRect.width - scaledMapWidth) / 2;
+      this.translateY = (containerRect.height - scaledMapHeight) / 2;
+    }
+
+    // Aplica la transformación
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
   }
+
+
 
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
@@ -1031,6 +1077,7 @@ export class SeatsPage {
       }, 300);
     });
   }
+  
 
   clampPanToBounds() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
