@@ -554,9 +554,7 @@ export class SeatsPage {
           el.classList.remove('sc-seat-reserved'); // quita gris si lo tiene
         }
 
-        if (el && !el.classList.contains('temporal')) {
-          el.classList.add('temporal'); // aplica naranja
-        }
+
       }
     });
   }
