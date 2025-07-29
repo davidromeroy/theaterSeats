@@ -96,6 +96,11 @@ export class SeatsPage {
   precioPlateaA: number = 40;
   precioPlateaB: number = 30;
   precioPlateaC: number = 20;
+  maxA: number = 0;
+  maxB: number = 0;
+  maxC: number = 0;
+  maxEntradasPorPlatea: { A: any; B: any; C: any; };
+  plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
 
   constructor(
     public navCtrl: NavController,
@@ -338,7 +343,7 @@ export class SeatsPage {
       indexerRows: { visible: false },
       frontVisible: false,
     },
-    cart: { currency: '$', submitLabel: 'Reservar' },
+    cart: { currency: 'puntos ', submitLabel: 'Reservar' },
     legendVisible: false,
   };
 
@@ -594,7 +599,14 @@ export class SeatsPage {
       // Crea el contador de tickets
       const countP = document.createElement('p');
       countP.classList.add('cart-count');
-      countP.textContent = `${sc.getCart().length} tickets`;
+      countP.textContent = `${sc.getCart().length} ticket(s)`;
+
+      const totalElement = document.querySelector('.sc-cart-total');
+
+      if (totalElement) {
+        const regex = /puntos\s+([\d.]+)/;
+        totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
+      }
 
       // Intenta insertarlo al principio del header, si existe
       if (originalHeader.firstChild) {
@@ -638,9 +650,6 @@ export class SeatsPage {
     const cart = this.sc.getCart(); // Asientos seleccionados
     const totalGastado = cart.reduce((sum, seat) => sum + this.getSeatPrice(seat), 0);
     const saldoRestante = Math.max(0, this.initialUserAmount - totalGastado);
-    this.precioPlateaA = saldoRestante >= 40 ? 40 : 0;
-    this.precioPlateaB = saldoRestante >= 30 ? 30 : 0;
-    this.precioPlateaC = saldoRestante >= 20 ? 20 : 0;
     this.userAmount = saldoRestante;
   }
 
@@ -771,7 +780,14 @@ export class SeatsPage {
           .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
           .join(', ');
         const countP = document.querySelector('.cart-count');
-        if (countP) countP.textContent = `${this.cart.length} tickets:\n${labels}`;
+        if (countP) countP.textContent = `${sc.getCart().length} ticket(s)`;
+
+        // Aplica el replace al totalElement cada vez que se actualiza el carrito
+        const totalElement = document.querySelector('.sc-cart-total');
+        if (totalElement) {
+          const regex = /puntos\s+([\d.]+)/;
+          totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
+        }
       });
 
       this.actualizarEstadoUsuario();
@@ -1058,6 +1074,27 @@ export class SeatsPage {
       this.translateY = Math.max(minTranslateY, Math.min(this.translateY, maxTranslateY));
     }
   }
+  // Nuevo: Función que devuelve la clase según la platea activa
+  get clasePlateaActiva(): string {
+    switch (this.plateaActiva) {
+      case 'A': return 'plateaA';
+      case 'B': return 'plateaB';
+      case 'C': return 'plateaC';
+      default: return '';
+    }
+  }
+  // Getter dinámico para el máximo de asientos seleccionables según la platea activa
+  get maxEntradasPlateaActiva(): number {
+    switch (this.plateaActiva) {
+      case 'A': return Math.floor(this.userAmount / this.precioPlateaA);
+      case 'B': return Math.floor(this.userAmount / this.precioPlateaB);
+      case 'C': return Math.floor(this.userAmount / this.precioPlateaC);
+      default: return 0;
+    }
+  }
+  cambiarPlatea(nuevaPlatea: string) {
+    this.plateaActiva = nuevaPlatea;
+  }
 
   ionViewDidEnter() {
 
@@ -1066,7 +1103,11 @@ export class SeatsPage {
 
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
-
+      // Calcula la cantidad máxima de asientos que puede escoger el usuario en cada platea
+      this.maxA = Math.floor(this.userAmount / this.precioPlateaA);
+      this.maxB = Math.floor(this.userAmount / this.precioPlateaB);
+      this.maxC = Math.floor(this.userAmount / this.precioPlateaC);
+      this.maxEntradasPorPlatea = { A: this.maxA, B: this.maxB, C: this.maxC };
       this.updateSeatColorsByUserAmount(this.userAmount);// Nuevo: Usa el valor de la variable para aplicar colores
 
       const container = this.seatContainer.nativeElement;
