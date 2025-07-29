@@ -828,8 +828,12 @@ export class SeatsPage {
         const labels = this.cart
           .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
           .join(', ');
+
         const countP = document.querySelector('.cart-count');
-        if (countP) countP.textContent = `${sc.getCart().length} ticket(s)`;
+        if (countP) {
+          // mostrar el nombre de asiento(s) seleccionado(s) junto con cantidad
+          countP.textContent = `${sc.getCart().length} ticket(s): ${labels}`;
+        }
 
         // Aplica el replace al totalElement cada vez que se actualiza el carrito
         const totalElement = document.querySelector('.sc-cart-total');
@@ -838,7 +842,6 @@ export class SeatsPage {
           totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
         }
       });
-
       this.actualizarEstadoUsuario();
     });
   }
