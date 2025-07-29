@@ -65,6 +65,10 @@
       <ion-icon [name]="presionado ? 'contract' : 'expand'" (click)="toggleIcon(presionado ? false : true)">
       </ion-icon>
 
+      <div class="zoom-controls">
+        <button (click)="zoomOut()">−</button>
+        <button (click)="zoomIn()">+</button>
+      </div>
       <div class="legend-footer">
         <ul class="legend-list">
           <li class="legend-item">
