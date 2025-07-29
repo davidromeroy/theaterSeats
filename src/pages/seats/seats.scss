@@ -120,6 +120,13 @@ page-seats {
     }
   }
 
+  .sc-seat-selected {
+    cursor: pointer;
+    background-color:#124F26 !important;
+    color: white;
+    opacity: 1;
+}
+
   // 🎭 ESCENARIO DEL TEATRO
   .stage {
     width: auto;

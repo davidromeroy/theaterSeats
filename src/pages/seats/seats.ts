@@ -5,6 +5,7 @@ import { AlertController } from 'ionic-angular';
 import { AsientosProvider } from '../../providers/asientos/asientos';
 
 
+
 declare var require: any;
 const Seatchart = require('seatchart');
 const QRCode = require('qrcode');
@@ -71,11 +72,11 @@ export class SeatsPage {
   timerActivo: boolean = false;
   @ViewChild('seatContainer') seatContainer: ElementRef;
 
-  userAmount = 100;
+   userAmount = 100;
 
   initialUserAmount: number; // Valor original del usuario para cálculos internos
 
-  // isReservado: boolean = false;// Nuevo
+  plateaActiva: string = 'A'; // Nueva variable para asientos disponibles
 
   blockedSeats: { row: number, col: number, expires: number, userId: number }[] = [];
   soldSeats: { row: number, col: number }[] = [];
@@ -91,6 +92,11 @@ export class SeatsPage {
   translateY = 0;
   startX = 0;
   startY = 0;
+
+  // nuevo
+  panX: number;
+  panY: number;
+
   private hammer: any;
   presionado: boolean = false;
   precioPlateaA: number = 40;
@@ -474,7 +480,7 @@ export class SeatsPage {
   getDisabledSeats() {
     return [
       ...this.generateDisabledSeatsFromLayout(),
-      //...this.soldSeats.map(s => ({ row: s.row, col: s.col }))(eliminar linea)
+      
     ];
   }
 
@@ -794,11 +800,6 @@ export class SeatsPage {
     });
   }
 
-
-
-
-
-
   private setupSubmitHandler(sc: any) {
     sc.addEventListener('submit', async (e) => {
       const cart = sc.getCart();
@@ -944,7 +945,7 @@ export class SeatsPage {
 
   }
 
-
+/*
   initializeZoomToFit(zoomIn: boolean = false) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const container = this.seatContainer.nativeElement;
@@ -971,7 +972,49 @@ export class SeatsPage {
     // Aplicar la transformación inicial
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
     map.style.transformOrigin = '0 0';
+  }*/
+
+initializeZoomToFit(zoomIn: boolean = false) {
+  const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+  const container = this.seatContainer.nativeElement;
+  const containerRect = container.getBoundingClientRect();
+
+  const scaleX = containerRect.width / map.offsetWidth;
+  const scaleY = containerRect.height / map.offsetHeight;
+
+  let baseZoom = Math.min(scaleX, scaleY, 1);
+
+  if (this.plateaActiva === 'A') {
+    // Zoom fijo más cercano para platea A
+    
+    this.zoomLevel = Math.min(baseZoom * 2.8, 2.8) 
+    this.globalScale = this.zoomLevel;
+
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2 ;
+    this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
+  } else {
+    // Zoom adaptable con opción de acercar para platea B y C
+    this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
+    this.globalScale = this.zoomLevel;
+
+    const scaledMapWidth = map.offsetWidth * this.zoomLevel;
+    const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+
+    this.translateX = (containerRect.width - scaledMapWidth) / 2;
+    this.translateY = zoomIn
+      ? (containerRect.height - scaledMapHeight) / 2 - 50
+      : (containerRect.height - scaledMapHeight) / 2;
   }
+
+  map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+  map.style.transformOrigin = '0 0';
+}
+
+
+
 
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
@@ -1051,6 +1094,7 @@ export class SeatsPage {
       }, 300);
     });
   }
+  
 
   clampPanToBounds() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
@@ -1095,6 +1139,21 @@ export class SeatsPage {
   cambiarPlatea(nuevaPlatea: string) {
     this.plateaActiva = nuevaPlatea;
   }
+
+  // Nuevo: Función que devuelve la clase según la platea activa
+  get clasePlateaActiva(): string {
+    switch (this.plateaActiva) {
+      case 'A': return 'plateaA';
+      case 'B': return 'plateaB';
+      case 'C': return 'plateaC';
+      default: return '';
+    }
+  }
+
+  cambiarPlatea(nuevaPlatea: string) {
+    this.plateaActiva = nuevaPlatea;
+  }
+
 
   ionViewDidEnter() {
 
