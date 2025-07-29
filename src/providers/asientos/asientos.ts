@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 @Injectable()
 export class AsientosProvider {
-  private apiUrl = 'http://localhost:8080/wordpress/wp-json/delportal/v1';
+  private apiUrl = 'http://localhost/capacitacionliris/wp-json/delportal/v1';
 
   constructor(private http: HttpClient) {
   }
