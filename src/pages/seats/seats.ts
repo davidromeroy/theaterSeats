@@ -106,7 +106,7 @@ export class SeatsPage {
   maxB: number = 0;
   maxC: number = 0;
   maxEntradasPorPlatea: { A: any; B: any; C: any; };
-  plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
+  // plateaActiva: string = 'B'; // Nueva variable para asientos disponibles
 
   constructor(
     public navCtrl: NavController,
@@ -258,7 +258,8 @@ export class SeatsPage {
 
   getPlateas(platea) {
     // Platea A: bloque central de filas medias
-    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19]);
+    const plateaA = this.generateCentralBlockSeats([14, 15, 16, 17, 18, 19])
+    .map(asiento => ({ ...asiento, type: 'Platea A' }));
 
     //Platea B:
     const plateaB = [
@@ -269,6 +270,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 6, 'left'),
       ...this.generateSideSeats([15, 16, 17, 18, 19], 4, 0, 'right'),
       ...this.generateSideSeats([20, 21], 5, 0, 'both'),]
+      .map(asiento => ({ ...asiento, type: 'Platea B' }));
 
     // Platea C:
     const plateaC = [
@@ -279,7 +281,7 @@ export class SeatsPage {
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 4, 'right'),       // laterales en filas 15–19
       ...this.generateSideSeats([15, 16, 17, 18, 19], 6, 0, 'left'),       // laterales en filas 15–19
       ...this.generateCentralBlockSeats([0, 1, 2, 3, 4, 5])  //  centro en filas altas W–R
-    ];
+    ].map(asiento => ({ ...asiento, type: 'Platea C' }));
 
     switch (platea) {
       case 'A':
@@ -293,7 +295,24 @@ export class SeatsPage {
 
       default:
         console.log("Asiento Fuera de Rango");
-        break;
+        const asientos = [
+          ...plateaA,
+          ...plateaB,
+          ...plateaC
+        ];
+        const output = {
+          rows: 22,
+          cols: 64,
+          types: {
+            "Platea A": "#42445A",
+            "Platea B": "#5B67EC",
+            "Platea C": "#15A66F"
+          },
+          seats: asientos  // Aquí va tu array de 952 objetos
+        };
+
+        // return JSON.stringify(output, null, 2);
+        return [];
     }
   }
 
@@ -624,6 +643,30 @@ export class SeatsPage {
       // Elimina el contenedor derecho original si existe
       if (originalContainer) originalContainer.remove();
 
+      // --- Interceptar y reemplazar el texto de .sc-cart-total ---
+      const cartTotalEl = cartContainer.querySelector('.sc-cart-total');
+      if (cartTotalEl) {
+
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach(() => {
+            const totalPuntos = sc.getCartTotal();
+            const nuevoTexto = `Puntos gastados: ${totalPuntos}`;
+
+            // Solo actualiza si es necesario (evita loop infinito)
+            if (cartTotalEl.textContent !== nuevoTexto) {
+              cartTotalEl.textContent = nuevoTexto;
+            }
+          });
+        });
+
+        // Observar cambios en el contenido del <p>
+        observer.observe(cartTotalEl, { childList: true, characterData: true, subtree: true });
+
+        // Asigna el valor inicial manualmente
+        const totalInicial = sc.getCart().reduce((sum, item) => sum + (item.price || 0), 0);
+        cartTotalEl.textContent = `Puntos gastados: ${totalInicial}`;
+      }
+
       // Opcional: aplica zoom si lo necesitas
       this.zoomLevel = this.zoomLevel || 1.0;
       this.initializeZoomToFit(false);
@@ -742,13 +785,13 @@ export class SeatsPage {
         const platea = this.getPlateaDeAsiento(row, col);
         const precio = this.getSeatPrice({ index: { row, col } });
 
-        if (saldoTemp >= precio) {
-          saldoTemp -= precio;
-          asientosValidos.push(item);
-        } else {
-          detallesInvalidos.push(`Platea ${platea} ($${precio})`);
-        }
+      if (saldoTemp >= precio) {
+        saldoTemp -= precio;
+        asientosValidos.push(item);
+      } else {
+        detallesInvalidos.push(`Platea ${platea} (${precio} puntos)`);
       }
+    }
 
       if (detallesInvalidos.length > 0) {
         const alertaError = this.alertCtrl.create({
@@ -1016,6 +1059,20 @@ initializeZoomToFit(zoomIn: boolean = false) {
 
 
 
+  zoomIn() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(1.2, centerX, centerY); // zoom in un 20%
+  }
+
+  zoomOut() {
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top + containerRect.height / 2;
+    this.zoomAtPoint(0.8, centerX, centerY); // zoom out un 20%
+  }
+
   pinchToZoom() {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     this.hammer = new hammerjs(map);
@@ -1140,19 +1197,32 @@ initializeZoomToFit(zoomIn: boolean = false) {
     this.plateaActiva = nuevaPlatea;
   }
 
-  // Nuevo: Función que devuelve la clase según la platea activa
-  get clasePlateaActiva(): string {
-    switch (this.plateaActiva) {
-      case 'A': return 'plateaA';
-      case 'B': return 'plateaB';
-      case 'C': return 'plateaC';
-      default: return '';
-    }
+  zoomAtPoint(factor: number, centerX: number, centerY: number) {
+    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+    const previousZoom = this.zoomLevel;
+    const newZoom = Math.max(0.125, Math.min(previousZoom * factor, 1.125));
+
+    const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+
+    const gestureX = centerX - containerRect.left;
+    const gestureY = centerY - containerRect.top;
+
+    const offsetX = (gestureX - this.translateX) / previousZoom;
+    const offsetY = (gestureY - this.translateY) / previousZoom;
+
+    this.zoomLevel = newZoom;
+    this.globalScale = newZoom;
+
+    this.translateX = gestureX - offsetX * newZoom;
+    this.translateY = gestureY - offsetY * newZoom;
+
+    this.clampPanToBounds();
+
+    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+    map.style.transformOrigin = '0 0';
   }
 
-  cambiarPlatea(nuevaPlatea: string) {
-    this.plateaActiva = nuevaPlatea;
-  }
+
 
 
   ionViewDidEnter() {
@@ -1173,6 +1243,7 @@ initializeZoomToFit(zoomIn: boolean = false) {
       this.initSeatChart(container); // retorna el chart
       // });
     });
+
   }
 
 }
