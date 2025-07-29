@@ -861,8 +861,12 @@ export class SeatsPage {
         const labels = this.cart
           .map(seat => this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }))
           .join(', ');
+
         const countP = document.querySelector('.cart-count');
-        if (countP) countP.textContent = `${sc.getCart().length} ticket(s)`;
+        if (countP) {
+          // mostrar el nombre de asiento(s) seleccionado(s) junto con cantidad
+          countP.textContent = `${sc.getCart().length} ticket(s): ${labels}`;
+        }
 
         // Aplica el replace al totalElement cada vez que se actualiza el carrito
         const totalElement = document.querySelector('.sc-cart-total');
@@ -871,7 +875,6 @@ export class SeatsPage {
           totalElement.innerHTML = totalElement.innerHTML.replace(regex, '$1 puntos');
         }
       });
-
       this.actualizarEstadoUsuario();
     });
   }
@@ -1122,9 +1125,13 @@ export class SeatsPage {
     //   🔎 Manejar el gesto pinch
     this.hammer.on('pinch', (event) => {
       const previousZoom = this.zoomLevel;
-      this.zoomLevel = Math.max(0.125, Math.min(event.scale * this.globalScale, 1.125)); // Limita el zoom entre 0.2x y 1.5x
-
       const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+
+      const scaleX = containerRect.width / map.offsetWidth;
+      const scaleY = containerRect.height / map.offsetHeight;
+
+      const baseZoom = Math.min(scaleX, scaleY, 1);
+      this.zoomLevel = Math.max(baseZoom, Math.min(event.scale * this.globalScale, baseZoom + 1)); // Limita el zoom al container
 
       // Coordenadas del gesto dentro del contenedor
       const gestureX = event.center.x - containerRect.left;
@@ -1233,9 +1240,13 @@ export class SeatsPage {
   zoomAtPoint(factor: number, centerX: number, centerY: number) {
     const map = this.seatContainer.nativeElement.querySelector('.sc-map');
     const previousZoom = this.zoomLevel;
-    const newZoom = Math.max(0.125, Math.min(previousZoom * factor, 1.125));
 
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
+    const scaleX = containerRect.width / map.offsetWidth;
+    const scaleY = containerRect.height / map.offsetHeight;
+
+    const baseZoom = Math.min(scaleX, scaleY, 1);
+    const newZoom = Math.max(baseZoom, Math.min(previousZoom * factor, baseZoom + 1));
 
     const gestureX = centerX - containerRect.left;
     const gestureY = centerY - containerRect.top;
