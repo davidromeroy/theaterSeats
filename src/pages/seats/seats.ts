@@ -431,13 +431,13 @@ export class SeatsPage {
         console.log('[DEBUG] Respuesta de actualizarAsiento:', response);
         // Manejo de respuesta del backend
         if (response && response.success) {
-          if (response.message && response.message.includes('El asiento sigue reservado para este usuario')) {
-            this.alertCtrl.create({
-              title: 'Retoma tu reserva',
-              message: response.message,
-              buttons: [{ text: 'Aceptar' }]
-            }).present();
-          }
+          // if (response.message && response.message.includes('Este asiento sigue reservado para este usuario')) {
+          //   this.alertCtrl.create({
+          //     title: `Tienes una reserva en progreso: ${asiento}`,
+          //     message: response.message,
+          //     buttons: [{ text: 'Aceptar' }]
+          //   }).present();
+          // }
           // Si es éxito normal, no mostrar alerta
           return response;
         } else if (response && response.code === 'asiento_reservado') {
@@ -446,6 +446,21 @@ export class SeatsPage {
             message: 'Este asiento ya está reservado por otro usuario.',
             buttons: [{ text: 'Aceptar' }]
           }).present();
+          //Primer posible implementación
+          // console.log("[DEBUG] Array asientos bloqueados antes de actualizar:", this.blockedSeats);
+          // this.blockedSeats.push({ row: seat.row, col: seat.col, expires: fechas.fecha_fin_reserva, userId: userId });
+          // console.log("[DEBUG] Array asientos bloqueados después de actualizar:", this.blockedSeats);
+          // this.refreshMap();
+          //Segunda posible implementación
+          this.loadSeatsFromDB();
+          return response;
+        } else if (response && response.code === 'asiento_ocupado') {
+          this.alertCtrl.create({
+            title: 'Asiento comprado por otro usuario',
+            message: response.message,
+            buttons: [{ text: 'Aceptar' }]
+          }).present();
+          this.loadSeatsFromDB();
           return response;
         } else {
           this.alertCtrl.create({
@@ -552,7 +567,12 @@ export class SeatsPage {
 
         if (el && el.classList.contains('sc-seat-reserved')) {
           el.classList.remove('sc-seat-reserved'); // quita gris si lo tiene
+        } else if (el && !el.classList.contains('temporal') && seat.userId !== 1) {
+          // Si no es el usuario actual, aplica clase temporal
+          el.classList.add('temporal');
         }
+
+
 
 
       }
@@ -601,7 +621,7 @@ export class SeatsPage {
           fecha_reserva: this.getGuayaquilDateString(now),
           fecha_fin_reserva: this.getGuayaquilDateString(fechaFinReserva)
         },
-        0,
+        0, //Canjeada o no
         1 // Cambiar esto por el ID del usuario real
       );
     });
@@ -1256,7 +1276,7 @@ export class SeatsPage {
 
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
-
+      this.loadSeatsFromDB();
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
       // Calcula la cantidad máxima de asientos que puede escoger el usuario en cada platea
