@@ -2,20 +2,39 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface EstadoAsiento {
+  id: string;
+  gamificacion_id?: string;
+  userid?: string;
+  ticket?: string;   // ej: "PLATEA A"
+  row?: string;      // ej: "19"
+  col?: string;      // ej: "45"
+  asiento?: string;  // ej: "C117"
+  estado?: string;   // ej: "Ocupado"
+  fecha_creacion?: string;
+  fecha_reserva?: string | null;
+  fecha_fin_reserva?: string | null;
+  fecha_ocupado?: string | null;
+  fecha_canjeado?: string | null;
+  canjeada?: string | number;
+}
+
 @Injectable()
 export class AsientosProvider {
   
-  private apiUrl = 'http://localhost/capacitacionliris/wp-json/delportal/v1';
+  private apiUrl = 'https://mobile.liris.com.ec/delportal/wp-json/delportal/v1/obtener_estado_asientos';
+
+   
 
   constructor(private http: HttpClient) {
   }
 
-  getEstadoAsientos(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/estado`);
-  }
+getEstadoAsientos():Observable<EstadoAsiento[]>{
+  return this.http.get<EstadoAsiento[]>(`${this.apiUrl}`);
+}
 
   // Actualizar estado de un asiento
-  actualizarAsiento(
+  /*actualizarAsiento(
     seat: { row: number, col: number },
     asiento: string,
     platea: string,
@@ -39,5 +58,5 @@ export class AsientosProvider {
     };
     return this.http.post(`${this.apiUrl}/actualizar`, body);
   }
-
+*/
 }

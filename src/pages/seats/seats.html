@@ -6,11 +6,11 @@
 -->
 <ion-header>
   <ion-navbar>
-    <ion-title>Mapa de Asientos</ion-title>
+    <ion-title>Asientos</ion-title>
   </ion-navbar>
 </ion-header>
 
-<ion-content padding>
+<ion-content fullscreen>
   <!-- Skeleton Loader -->
   <div *ngIf="loading" class="skeleton-wrapper">
     <div class="skeleton skeleton-title"></div>
@@ -27,63 +27,32 @@
       </div>
       <div class="skeleton skeleton-button"></div>
     </div>
-
   </div>
   <div [hidden]="loading">
-    <!--Dinero disponible del usuario -->
-    <div class="budget-label">
-      <p><strong>Puntos disponibles:</strong> {{ userAmount }}</p>
-      <p>Puedes escoger hasta {{ maxEntradasPlateaActiva }} asientos en Platea {{ this.plateaActiva}} </p>
-      <div *ngIf="timerActivo" class="timer" [ngClass]="{'timer-critical': isTimeCritical()}">
-        {{ formatTimeLeft() }}
-      </div>
-
-    </div>
-
-    <!-- Leyenda de Plateas -->
-    <div class="legend-card">
-      <h3 class="legend-title">PLATEAS</h3>
-      <ul class="legend-list">
-        <li class="legend-item">
-          <div class="legend-bullet plateaA"></div>
-          <p class="legend-description">Platea {{ this.plateaActiva }} </p>
-        </li>
-        <!-- <li class="legend-item">
-          <div class="legend-bullet plateaB"></div>
-          <p class="legend-description">Platea B ($30)</p>
-        </li>
-        <li class="legend-item">
-          <div class="legend-bullet plateaC"></div>
-          <p class="legend-description">Platea C ($20)</p>
-        </li> -->
-      </ul>
-    </div>
-    <!-- Mapa y carrito -->
+   <div class="banner">
+  <div>
+    <h2>Platea A</h2>
+    <div class="color-box platea-a"></div>
+  </div>
+  <div>
+    <h2>Platea B</h2>
+    <div class="color-box platea-b"></div>
+  </div>
+  <div>
+    <h2>Platea C</h2>
+    <div class="color-box platea-c"></div>
+  </div>
+    <div>
+    <h2>Ocupados</h2>
+    <div class="color-box occupado"></div>
+  </div>
+</div>
     <div id="seatWrapper">
       <div #seatContainer>
       </div>
-      <ion-icon [name]="presionado ? 'contract' : 'expand'" (click)="toggleIcon(presionado ? false : true)">
-      </ion-icon>
-
       <div class="zoom-controls">
         <button (click)="zoomOut()">−</button>
         <button (click)="zoomIn()">+</button>
-      </div>
-      <div class="legend-footer">
-        <ul class="legend-list">
-          <li class="legend-item">
-            <div class="legend-bullet" [ngClass]="clasePlateaActiva"></div>
-            <p class="legend-description">Asientos Disponible</p>
-          </li>
-          <li class="legend-item">
-            <div class="legend-bullet sc-seat-reserved"></div>
-            <p class="legend-description">Ocupado</p>
-          </li>
-          <li class="legend-item">
-            <div class="legend-bullet sc-seat sc-seat-selected"></div>
-            <p class="legend-description">Asientos Seleccionados</p>
-          </li>
-        </ul>
       </div>
       <div id="floatingCart"></div> <!-- Contenedor para el carrito -->
     </div>

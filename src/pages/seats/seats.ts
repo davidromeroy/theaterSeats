@@ -2,7 +2,7 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Platform } from 'ionic-angular';
 import { AlertController } from 'ionic-angular';
-import { AsientosProvider } from '../../providers/asientos/asientos';
+import { AsientosProvider, EstadoAsiento } from '../../providers/asientos/asientos';
 
 
 
@@ -52,6 +52,7 @@ const layout = [
   templateUrl: 'seats.html',
 })
 export class SeatsPage {
+  readOnly = false;
   // Devuelve la fecha en formato YYYY-MM-DD HH:mm:ss para Guayaquil (GMT-5)
   private getGuayaquilDateString(date: Date): string {
     const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
@@ -84,7 +85,7 @@ export class SeatsPage {
 
 
   cart: { row: number, col: number }[] = [];
-  zoomLevel: number;
+  zoomLevel: number=0.8;
   globalScale: number = 1;
   originalMapWidth: number;
   originalMapHeight: number;
@@ -235,7 +236,7 @@ export class SeatsPage {
 
     return seats;
   }
-
+  
   generateIndexSeats() {
     const indexSeats = [];
 
@@ -382,102 +383,25 @@ export class SeatsPage {
     this.refreshMap();
   }
 
-  loadSeatsFromDB() {
-    console.log('[DEBUG] Llamando getEstadoAsientos API...');
-    this.asientosProvider.getEstadoAsientos().subscribe(
-      data => {
-        console.log('[DEBUG] Respuesta recibida del API:', data);
-        this.blockedSeats = data
-          .filter(seat => seat.estado === 'Reservado' && seat.fecha_fin_reserva && new Date(seat.fecha_fin_reserva) > now)
-          .map(seat => ({
-            row: seat.row,
-            col: seat.col,
-            expires: new Date(seat.fecha_fin_reserva).getTime(),
-            userId: seat.userId
-          }));
-        console.log('[DEBUG] blockedSeats después de filtrar:', this.blockedSeats);
-        this.soldSeats = data
-          .filter(seat => seat.estado === 'Ocupado')
-          .map(seat => ({
-            row: Number(seat.row),
-            col: Number(seat.col),
-            label: seat.asiento
-          }));
-        console.log('[DEBUG] soldSeats después de filtrar:', this.soldSeats);
-        this.refreshMap();
-        // Oculta el skeleton solo cuando los datos del API están listos
-        this.loading = false;
-      },
-      error => {
-        console.error('[ERROR] Error en getEstadoAsientos:', error);
-      }
-    );
-  }
+ loadSeatsFromDB() {
+  this.asientosProvider.getEstadoAsientos().subscribe(
+    data => {
+         // Solo ocupados
+      this.soldSeats = (data || [])
+        .filter(seat => String(seat.estado || '').toLowerCase() === 'ocupado')
+        .map(seat => ({
+          row: Number(seat.row),
+          col: Number(seat.col)
+        }));
+      this.refreshMap();     // -> pinta reservados (ocupados)
+      this.loading = false;  // oculta skeleton
+    },
+    error => {
+           this.loading = false;
+    }
+  );
+}
 
-  actualizarAsientoEnBD(seat: { row: number, col: number }, asiento: string, platea: string, estado: string, fechas: any, canjeada: number = 0, userId: number) {
-    console.log('[DEBUG] Enviando actualización de asiento al API:', {
-      row: seat.row,
-      col: seat.col,
-      asiento,
-      platea,
-      estado,
-      fechas,
-      userId,
-      canjeada
-    });
-    return this.asientosProvider.actualizarAsiento({ row: seat.row, col: seat.col }, asiento, platea, estado, fechas, userId, canjeada)
-      .toPromise()
-      .then(response => {
-        console.log('[DEBUG] Respuesta de actualizarAsiento:', response);
-        // Manejo de respuesta del backend
-        if (response && response.success) {
-          if (response.message && response.message.includes('El asiento sigue reservado para este usuario')) {
-            this.alertCtrl.create({
-              title: 'Retoma tu reserva',
-              message: response.message,
-              buttons: [{ text: 'Aceptar' }]
-            }).present();
-          }
-          // Si es éxito normal, no mostrar alerta
-          return response;
-        } else if (response && response.code === 'asiento_reservado') {
-          this.alertCtrl.create({
-            title: 'Asiento ocupado',
-            message: 'Este asiento ya está reservado por otro usuario.',
-            buttons: [{ text: 'Aceptar' }]
-          }).present();
-          return response;
-        } else {
-          this.alertCtrl.create({
-            title: 'Error',
-            message: response && response.message ? response.message : 'No se pudo actualizar el asiento.',
-            buttons: [{ text: 'Aceptar' }]
-          }).present();
-          return response;
-        }
-      })
-      .catch(error => {
-        // Error de red o backend
-        let msg = 'Error en la petición.';
-        if (error && error.error && error.error.message) {
-          msg = error.error.message;
-        }
-        this.alertCtrl.create({
-          title: 'Error',
-          message: msg,
-          buttons: [{ text: 'Aceptar' }]
-        }).present();
-        throw error;
-      });
-    // this.asientosProvider.actualizarAsiento(seat, estado, fechas, userid).subscribe(
-    //   response => {
-    //     console.log('Asiento actualizado:', response);
-    //   },
-    //   error => {
-    //     console.error('Error al actualizar el asiento:', error);
-    //   }
-    // );
-  }
 
   actualizarEstadoUsuarioPorBloqueos() {
     // 1. Encuentra todos los asientos bloqueados aún vigentes
@@ -562,8 +486,6 @@ export class SeatsPage {
 
   getReservedSeats() {
     // Solo devolver los asientos vendidos confirmados
-    console.log('[DEBUG] Obteniendo asientos reservados...', this.soldSeats);
-
     return this.soldSeats.map(s => ({ row: s.row, col: s.col }));
   }
 
@@ -592,18 +514,7 @@ export class SeatsPage {
       const now = new Date();
       const fechaFinReserva = new Date(now.getTime() + this.timeLeft * 1000); // Expira en timeLeft segundos
       const platea = this.getPlateaDeAsiento(seat.row, seat.col);
-      this.actualizarAsientoEnBD(
-        seat,
-        this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }),
-        platea,
-        'Reservado',
-        {
-          fecha_reserva: this.getGuayaquilDateString(now),
-          fecha_fin_reserva: this.getGuayaquilDateString(fechaFinReserva)
-        },
-        0,
-        1 // Cambiar esto por el ID del usuario real
-      );
+      
     });
 
     // Actualiza tu carrito
@@ -924,7 +835,6 @@ export class SeatsPage {
 
   }
 
-
   reserveConfirm(qrDataArray) {
     const alert = this.alertCtrl.create({
       title: 'Confirmar reserva',
@@ -944,17 +854,7 @@ export class SeatsPage {
             this.cart.forEach(seat => {
               const now = new Date();
               // Actualizar el estado del asiento en la base de datos
-              this.actualizarAsientoEnBD(
-                seat,
-                this.seatLabelSeatsFromLayout({ row: seat.row, col: seat.col }),
-                this.getPlateaDeAsiento(seat.row, seat.col),
-                'Ocupado',
-                {
-                  fecha_canje: this.getGuayaquilDateString(now)
-                },
-                0,
-                1 // Cambiar esto por el ID del usuario real
-              );
+            
               // 🔍 Buscar el elemento en el DOM por ID
               const el = document.querySelector(`#seat-${seat.row}-${seat.col}`);
               if (el) {
@@ -1009,20 +909,24 @@ export class SeatsPage {
   private initSeatChart(container: HTMLElement) {
     this.sc = new Seatchart(container, this.options);
 
-    // 1. Inserta el escenario (STAGE)
-    this.insertStage(container);
+    // Escenario
+   this.insertStage(container);
 
-    // 2. Reubica el carrito flotante
-    this.relocateCart(container, this.sc);
+  // Carrito flotante (si quieres ocultarlo en web, lo movemos igual y lo ocultamos con CSS)
+  this.relocateCart(container, this.sc);
 
-    // 3. Configura el evento de carrito
+ 
     this.setupCartListener(this.sc);
-
-    // 4. Configura la lógica de submit
     this.setupSubmitHandler(this.sc);
-    return this.sc;
+  
 
-  }
+ 
+  // Zoom/pinch siguen activos en ambos modos (si no deseas zoom en web, no llames pinchToZoom)
+  this.initializeZoomToFit(false);
+  this.pinchToZoom();
+
+  return this.sc;
+}
 
   /*
     initializeZoomToFit(zoomIn: boolean = false) {
@@ -1053,47 +957,30 @@ export class SeatsPage {
       map.style.transformOrigin = '0 0';
     }*/
 
-  initializeZoomToFit(zoomIn: boolean = false) {
-    const map = this.seatContainer.nativeElement.querySelector('.sc-map');
-    const container = this.seatContainer.nativeElement;
-    const containerRect = container.getBoundingClientRect();
+initializeZoomToFit(zoomIn: boolean = false) {
+  const map = this.seatContainer.nativeElement.querySelector('.sc-map');
+  const container = this.seatContainer.nativeElement;
+  const containerRect = container.getBoundingClientRect();
 
-    const scaleX = containerRect.width / map.offsetWidth;
-    const scaleY = containerRect.height / map.offsetHeight;
+  const scaleX = containerRect.width / map.offsetWidth;
+  const scaleY = containerRect.height / map.offsetHeight;
 
-    let baseZoom = Math.min(scaleX, scaleY, 1);
+  const baseZoom = Math.min(scaleX, scaleY, 1);
 
-    if (this.plateaActiva === 'A') {
-      // Zoom fijo más cercano para platea A
+  // Aplica un factor menor para dejar margen visual alrededor
+  this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom * 0.8;
+  this.globalScale = this.zoomLevel;
 
-      this.zoomLevel = Math.min(baseZoom * 2.8, 2.8)
-      this.globalScale = this.zoomLevel;
+  const scaledWidth = map.offsetWidth * this.zoomLevel;
+  const scaledHeight = map.offsetHeight * this.zoomLevel;
 
-      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
+  // 🔥 CENTRADO HORIZONTAL Y VERTICAL
+  this.translateX = (containerRect.width - scaledWidth) / 2;
+  this.translateY = (containerRect.height - scaledHeight) / 2;
 
-      this.translateX = (containerRect.width - scaledMapWidth) / 2;
-      this.translateY = (containerRect.height - scaledMapHeight) / 2 - 100;
-    } else {
-      // Zoom adaptable con opción de acercar para platea B y C
-      this.zoomLevel = zoomIn ? Math.min(baseZoom * 2.5, 2.5) : baseZoom;
-      this.globalScale = this.zoomLevel;
-
-      const scaledMapWidth = map.offsetWidth * this.zoomLevel;
-      const scaledMapHeight = map.offsetHeight * this.zoomLevel;
-
-      this.translateX = (containerRect.width - scaledMapWidth) / 2;
-      this.translateY = zoomIn
-        ? (containerRect.height - scaledMapHeight) / 2 - 50
-        : (containerRect.height - scaledMapHeight) / 2;
-    }
-
-    map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-    map.style.transformOrigin = '0 0';
-  }
-
-
-
+  map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
+  map.style.transformOrigin = '0 0';
+}
 
   zoomIn() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
@@ -1151,15 +1038,12 @@ export class SeatsPage {
       map.style.transformOrigin = '0 0';
 
     });
-
     // 🔚 PINCH END
     this.hammer.on('pinchend', () => {
       this.globalScale = this.zoomLevel;
       this.clampPanToBounds();
-
       map.style.transition = 'transform 0.3s ease-out';
       map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
-
       setTimeout(() => {
         map.style.transition = '';
       }, 300);
@@ -1191,7 +1075,6 @@ export class SeatsPage {
       }, 300);
     });
   }
-
 
   clampPanToBounds() {
     const containerRect = this.seatContainer.nativeElement.getBoundingClientRect();
@@ -1265,15 +1148,10 @@ export class SeatsPage {
     map.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoomLevel})`;
     map.style.transformOrigin = '0 0';
   }
-
-
-
-
   ionViewDidEnter() {
 
     this.platform.ready().then(() => {
       // requestAnimationFrame(() => {
-
       // Asigna saldo inicial dinámicamente
       this.initialUserAmount = this.userAmount; //Nuevo
       // Calcula la cantidad máxima de asientos que puede escoger el usuario en cada platea

@@ -10,7 +10,12 @@ ion-header,
 .toolbar-title-md {
   color: white !important;
 }
-
+#seatContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 page-seats {
 
   // 🎨 LEYENDA PRINCIPAL (Plateas)
@@ -149,29 +154,78 @@ page-seats {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 
+  
+  .banner {
+    display: flex;
+    justify-content: space-between;
+  font-size: 1rem;
+  font-family: sans-serif;
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 2rem;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.banner > div {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  ;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+   border: 1px solid rgba(0,0,0,0.15);
+   margin-top: 5px;
+}
+
+.color-box:hover {
+  transform: scale(1.15);
+}
+
+.platea-a {
+  background-color: yellow; /* amarillo más suave */
+}
+
+.platea-b {
+  background-color: #43e3d3; /* turquesa */
+}
+
+.platea-c {
+  background-color: magenta; /* magenta intenso */
+}
+
+.occupado {
+  background-color: #9e9e9e; /* gris */
+}
+
   // 🎫 CONTENEDOR PRINCIPAL
   #seatWrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 100vw;
-    // height: auto;
-    max-height: 100vh;
-    justify-content: center;
-    padding: 0 1rem;
-    box-sizing: border-box;
-  }
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 
   // 🧱 CONTENEDOR DEL MAPA
   .sc-main-container {
-    // overflow-y: auto;
+    overflow-y: auto;
     overflow: hidden; // evita scroll interno
     position: relative;
     touch-action: none; // necesario si usas Hammer para gestos
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 35vh;
+    height: 100vh;
     padding: 0%;
   }
 
@@ -315,6 +369,7 @@ page-seats {
 
   // 🎟️ ESTILOS DE ASIENTOS
   .sc-seat {
+    pointer-events: none !important;
     flex: 0 0 auto !important; // evita que se escalen
     width: 36px;
     height: 32px;
@@ -439,7 +494,7 @@ page-seats {
   // 🛒 CARRITO FLOTANTE
   #floatingCart {
     margin-top: 2rem;
-    display: flex;
+    display: none;
     flex-direction: row;
     gap: 2rem;
     // position: sticky;
